@@ -46,9 +46,26 @@ export default function Verifier() {
     let ht5Qrcode: Html5Qrcode | null = null;
     if (isScanning) {
       ht5Qrcode = new Html5Qrcode("reader");
+      const config = {
+        fps: 20,
+        qrbox: (viewfinderWidth: number, viewfinderHeight: number) => {
+          const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+          const boxSize = Math.floor(minEdge * 0.75);
+          return { width: boxSize, height: boxSize };
+        },
+        aspectRatio: 1.0,
+        disableFlip: false,
+        // Request higher resolution for better focus on small modules
+        videoConstraints: {
+          facingMode: "environment",
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        }
+      };
+
       ht5Qrcode.start(
         { facingMode: "environment" },
-        { fps: 10, qrbox: 250 },
+        config,
         (decodedText) => {
           ht5Qrcode?.stop().catch(console.error);
           setIsScanning(false);
@@ -254,7 +271,13 @@ export default function Verifier() {
         )}
       </div>
 
-      <div id="reader" className={`w-full max-w-sm rounded-2xl overflow-hidden shadow-lg border-2 border-sky-300 dark:border-sky-500/30 ${!isScanning && 'hidden'}`}></div>
+      <div id="reader" className={`w-full max-w-sm rounded-[2rem] overflow-hidden shadow-2xl border-4 border-sky-400/50 dark:border-sky-500/30 ${!isScanning && 'hidden'}`}></div>
+      
+      {isScanning && (
+        <p className="text-[10px] text-slate-500 font-medium animate-pulse">
+          Dica: Aproxime ou afaste a câmera para focar no código.
+        </p>
+      )}
 
       <div className="relative flex items-center py-2 w-full max-w-md">
         <div className="flex-grow border-t border-slate-300 dark:border-slate-700/80"></div>
