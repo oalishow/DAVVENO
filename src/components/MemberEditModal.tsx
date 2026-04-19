@@ -1,6 +1,6 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, ChangeEvent } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Save, Trash2, ShieldAlert, Download, QrCode, Image as ImageIcon } from 'lucide-react';
+import { X, Save, Trash2, ShieldAlert, Download, QrCode, Image as ImageIcon, Printer } from 'lucide-react';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db, appId } from '../lib/firebase';
 import type { Member } from '../types';
@@ -36,7 +36,7 @@ export default function MemberEditModal({ member, onClose, onUpdate }: MemberEdi
     setRoles(prev => prev.includes(role) ? prev.filter(r => r !== role) : [...prev, role]);
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       setCropImageSrc(URL.createObjectURL(file));
@@ -93,6 +93,10 @@ export default function MemberEditModal({ member, onClose, onUpdate }: MemberEdi
     link.click();
   };
 
+  const handlePrint = () => {
+    window.print();
+  };
+
   const verificationUrl = `${localStorage.getItem(URL_STORAGE_KEY) || DEFAULT_PUBLIC_URL}?verify=${member.alphaCode}`;
 
   useEffect(() => {
@@ -117,7 +121,7 @@ export default function MemberEditModal({ member, onClose, onUpdate }: MemberEdi
         
         <div className="flex justify-between items-center mb-4 pb-3 border-b border-slate-200 dark:border-slate-700/60 sticky top-0 bg-white dark:bg-slate-800 z-20">
           <h2 className="text-xl font-bold text-sky-600 dark:text-sky-400">Ficha do Membro</h2>
-          <button onClick={onClose} className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+          <button onClick={onClose} className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors no-print">
             <X className="w-5 h-5 text-slate-500" />
           </button>
         </div>
@@ -184,13 +188,16 @@ export default function MemberEditModal({ member, onClose, onUpdate }: MemberEdi
                <QRCodeCanvas value={verificationUrl} size={160} level="M" />
             </div>
 
-            <button onClick={downloadQR} className="btn-modern flex items-center gap-2 py-2.5 px-4 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-bold rounded-xl shadow-sm w-full justify-center mb-2">
+            <button onClick={downloadQR} className="btn-modern flex items-center gap-2 py-2.5 px-4 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-bold rounded-xl shadow-sm w-full justify-center mb-2 no-print">
               <Download className="w-4 h-4" /> Exportar QR Code
+            </button>
+            <button onClick={handlePrint} className="btn-modern flex items-center gap-2 py-2.5 px-4 bg-slate-800 hover:bg-slate-700 text-white text-sm font-bold rounded-xl shadow-sm w-full justify-center no-print">
+              <Printer className="w-4 h-4" /> Imprimir Ficha
             </button>
           </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row justify-between items-center mt-6 pt-5 border-t border-slate-200 dark:border-slate-700/60 gap-4">
+        <div className="flex flex-col sm:flex-row justify-between items-center mt-6 pt-5 border-t border-slate-200 dark:border-slate-700/60 gap-4 no-print">
           <button onClick={handleSoftDelete} disabled={loading} className="btn-modern flex items-center gap-2 text-rose-600 bg-rose-50 hover:bg-rose-600 hover:text-white px-4 py-2.5 rounded-xl text-sm font-medium transition-colors w-full sm:w-auto justify-center">
              <Trash2 className="w-4 h-4" /> Mover para Lixeira
           </button>

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Printer } from 'lucide-react';
 import type { Member } from '../types';
 import { QRCodeCanvas } from 'qrcode.react';
 import { URL_STORAGE_KEY, DEFAULT_PUBLIC_URL } from '../lib/constants';
@@ -95,6 +96,10 @@ export default function VerificationResult({ member, status, onReset }: Verifica
     }
   };
 
+  const handlePrint = () => {
+    window.print();
+  };
+
   return (
     <div className="w-full mt-6 animated-fade-in flex flex-col items-center">
       <div 
@@ -174,16 +179,21 @@ export default function VerificationResult({ member, status, onReset }: Verifica
         )}
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-3 mt-5 w-full max-w-sm">
+      <div className="flex flex-col sm:flex-row gap-3 mt-5 w-full max-w-sm no-print">
         <button onClick={onReset} className="flex-1 py-3 px-4 rounded-xl text-sm font-bold text-slate-700 bg-slate-200 hover:bg-slate-300 transition-colors">
           Nova Consulta
         </button>
-        <button onClick={handleExport} disabled={exporting} className={`flex-1 py-3 px-4 rounded-xl text-sm font-bold text-white transition-colors ${
-          status === 'VALID' ? 'bg-emerald-600 hover:bg-emerald-500' : 
-          status === 'INACTIVE' ? 'bg-amber-600 hover:bg-amber-500' : 'bg-rose-600 hover:bg-rose-500'
-        }`}>
-          {exporting ? 'A exportar...' : 'Baixar Imagem'}
-        </button>
+        <div className="flex gap-2 flex-1">
+          <button onClick={handlePrint} className="p-3 rounded-xl bg-slate-800 text-white hover:bg-slate-700 transition-colors" title="Imprimir">
+            <Printer className="w-5 h-5" />
+          </button>
+          <button onClick={handleExport} disabled={exporting} className={`flex-1 py-3 px-4 rounded-xl text-sm font-bold text-white transition-colors ${
+            status === 'VALID' ? 'bg-emerald-600 hover:bg-emerald-500' : 
+            status === 'INACTIVE' ? 'bg-amber-600 hover:bg-amber-500' : 'bg-rose-600 hover:bg-rose-500'
+          }`}>
+            {exporting ? 'A exportar...' : 'Baixar Imagem'}
+          </button>
+        </div>
       </div>
     </div>
   );

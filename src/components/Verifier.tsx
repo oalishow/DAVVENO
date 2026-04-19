@@ -147,7 +147,7 @@ export default function Verifier() {
           }}
         />
         {validationResult.member && validationResult.status !== 'NOT_FOUND' && (
-          <div className="mt-4 w-full max-w-sm px-1">
+          <div className="mt-4 w-full max-w-sm px-1 no-print">
              <button onClick={() => setShowSuggestEdit(true)} className="w-full py-3 px-4 rounded-xl text-sm font-bold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 shadow-sm dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-700 transition-colors">
                Sugerir Alteração / Correção
              </button>

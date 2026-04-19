@@ -64,7 +64,7 @@ export default function MemberList() {
 
   return (
     <>
-      <div className="flex flex-col sm:flex-row gap-3 mt-4 mb-4">
+      <div className="flex flex-col sm:flex-row gap-3 mt-4 mb-4 no-print">
         <div className="relative flex-1">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
             <Search className="w-4 h-4 text-slate-400" />
@@ -94,14 +94,14 @@ export default function MemberList() {
         </div>
       </div>
 
-      <div className="text-xs sm:text-sm font-medium text-sky-700 dark:text-sky-300 bg-sky-100 dark:bg-sky-500/10 px-3 py-1 mb-2 rounded-full border border-sky-200 dark:border-sky-500/20 inline-block w-fit">
+      <div className="text-xs sm:text-sm font-medium text-sky-700 dark:text-sky-300 bg-sky-100 dark:bg-sky-500/10 px-3 py-1 mb-2 rounded-full border border-sky-200 dark:border-sky-500/20 inline-block w-fit no-print">
          Mostrando {filteredMembers.length} de {members.length} registos
       </div>
 
       {filteredMembers.length === 0 ? (
         <p className="text-slate-500 italic p-6 text-center text-sm">Nenhum registo encontrado com estes critérios.</p>
       ) : (
-        <div className="space-y-2 max-h-[300px] sm:max-h-[400px] overflow-y-auto custom-scrollbar pr-2">
+        <div className="space-y-2 max-h-[300px] sm:max-h-[400px] overflow-y-auto sm:print:max-h-none print:max-h-none print:overflow-visible custom-scrollbar pr-2">
           {filteredMembers.map(member => {
             const isInactive = member.isActive === false;
             const formattedDate = member.validityDate ? new Date(member.validityDate + 'T23:59:59').toLocaleDateString('pt-BR') : 'N/D';
@@ -124,7 +124,7 @@ export default function MemberList() {
                     </p>
                   </div>
                 </div>
-                <button onClick={() => setEditingMember(member)} className="flex-shrink-0 py-1.5 sm:py-2 px-2 sm:px-3 rounded-lg text-xs font-bold text-sky-700 dark:text-sky-300 bg-sky-100 dark:bg-sky-600/20 hover:bg-sky-500 hover:text-white border border-sky-300 dark:border-sky-500/30 transition-all">
+                <button onClick={() => setEditingMember(member)} className="flex-shrink-0 py-1.5 sm:py-2 px-2 sm:px-3 rounded-lg text-xs font-bold text-sky-700 dark:text-sky-300 bg-sky-100 dark:bg-sky-600/20 hover:bg-sky-500 hover:text-white border border-sky-300 dark:border-sky-500/30 transition-all no-print">
                   Gerir
                 </button>
               </div>

@@ -5,3 +5,4 @@ export const DEFAULT_PUBLIC_URL = 'https://carteirinhafajopa.netlify.app';
 export const BACKUP_STORAGE_KEY = 'verifyId_local_backup';
 export const RESTORE_POINT_KEY = 'verifyId_restore_point';
 export const EMAIL_SETTINGS_KEY = 'verifyId_email_settings';
+export const APP_VERSION = '2.8.0';

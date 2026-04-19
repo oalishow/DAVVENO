@@ -9,6 +9,7 @@ import RecycleBinModal from './RecycleBinModal';
 import BackupModal from './BackupModal';
 import AdminRequestsModal from './AdminRequestsModal';
 import ImageCropperModal from './ImageCropperModal';
+import PrintReportModal from './PrintReportModal';
 
 export default function AdminPanel({ onLogout }: { onLogout: () => void }) {
   const [name, setName] = useState('');
@@ -26,6 +27,7 @@ export default function AdminPanel({ onLogout }: { onLogout: () => void }) {
   const [showBin, setShowBin] = useState(false);
   const [showBackup, setShowBackup] = useState(false);
   const [showRequests, setShowRequests] = useState(false);
+  const [showPrintReport, setShowPrintReport] = useState(false);
 
   // Dash Stats
   const [stats, setStats] = useState({ totalActive: 0, totalInactive: 0, totalPending: 0, totalTrash: 0 });
@@ -101,6 +103,10 @@ export default function AdminPanel({ onLogout }: { onLogout: () => void }) {
     }
   };
 
+  const handlePrint = () => {
+    setShowPrintReport(true);
+  };
+
   return (
     <div className="animated-fade-in">
       {cropImageSrc && (
@@ -114,7 +120,7 @@ export default function AdminPanel({ onLogout }: { onLogout: () => void }) {
         />
       )}
 
-      <div className="flex justify-between items-center mb-6 border-b border-slate-200 dark:border-slate-700/60 pb-3 sm:pb-4">
+      <div className="flex justify-between items-center mb-6 border-b border-slate-200 dark:border-slate-700/60 pb-3 sm:pb-4 no-print">
         <h2 className="text-lg sm:text-xl font-semibold text-slate-800 dark:text-slate-200">Painel de Gestão</h2>
         <div className="flex items-center gap-2 sm:gap-3">
           <button onClick={() => setShowSettings(true)} className="p-1.5 sm:p-2 text-sky-600 dark:text-sky-400 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg transition-all" title="Configurações">
@@ -126,7 +132,7 @@ export default function AdminPanel({ onLogout }: { onLogout: () => void }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-8">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-8 no-print">
         <div className="bg-white dark:bg-slate-800/40 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/50 flex flex-col items-center justify-center text-center shadow-sm">
            <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-2">
              <UserCheck className="w-4 h-4" />
@@ -159,7 +165,7 @@ export default function AdminPanel({ onLogout }: { onLogout: () => void }) {
         </div>
       </div>
 
-      <div className="space-y-4 sm:space-y-5 bg-white dark:bg-slate-800/40 p-4 sm:p-6 rounded-2xl border border-slate-200 dark:border-slate-700/50">
+      <div className="space-y-4 sm:space-y-5 bg-white dark:bg-slate-800/40 p-4 sm:p-6 rounded-2xl border border-slate-200 dark:border-slate-700/50 no-print">
         <h3 className="text-base sm:text-lg font-medium text-slate-800 dark:text-slate-200 flex items-center gap-2">
           <UserPlus className="w-5 h-5 text-sky-600 dark:text-sky-400" />
           Registo Direto de Membro
@@ -242,33 +248,35 @@ export default function AdminPanel({ onLogout }: { onLogout: () => void }) {
         </div>
       )}
 
-      {/* Toolbar */}
+      {/* Toolbar & List */}
       <div className="mt-8 sm:mt-10 pt-6 sm:pt-8 border-t border-slate-200 dark:border-slate-700/60">
-        <h3 className="text-base sm:text-lg font-medium text-slate-800 dark:text-slate-200 flex items-center gap-2 mb-4">
-          <Database className="w-5 h-5 text-blue-500 dark:text-blue-400" />
-          Gestão & Base de Dados
-        </h3>
+        <div className="no-print">
+          <h3 className="text-base sm:text-lg font-medium text-slate-800 dark:text-slate-200 flex items-center gap-2 mb-4">
+            <Database className="w-5 h-5 text-blue-500 dark:text-blue-400" />
+            Gestão & Base de Dados
+          </h3>
 
-        <div className="grid grid-cols-1 sm:grid-cols-5 gap-2 sm:gap-3 mb-4">
-          <button onClick={() => setShowList(!showList)} className={`btn-modern py-2.5 px-3 rounded-xl border shadow-sm text-xs sm:text-sm font-medium transition-colors ${showList ? 'bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-white border-transparent' : 'bg-white dark:bg-slate-800/80 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-600/50 hover:bg-slate-50 dark:hover:bg-slate-700'}`}>
-            Exibir Lista
-          </button>
-          
-          <button className="btn-modern flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl border border-sky-300 text-sky-700 bg-sky-50 hover:bg-sky-100 text-xs sm:text-sm font-medium dark:bg-sky-900/20 dark:text-sky-300 dark:border-sky-500/30">
-            <Printer className="w-4 h-4" /> Imprimir
-          </button>
+          <div className="grid grid-cols-1 sm:grid-cols-5 gap-2 sm:gap-3 mb-4">
+            <button onClick={() => setShowList(!showList)} className={`btn-modern py-2.5 px-3 rounded-xl border shadow-sm text-xs sm:text-sm font-medium transition-colors ${showList ? 'bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-white border-transparent' : 'bg-white dark:bg-slate-800/80 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-600/50 hover:bg-slate-50 dark:hover:bg-slate-700'}`}>
+              Exibir Lista
+            </button>
+            
+            <button onClick={handlePrint} className="btn-modern flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl border border-sky-300 text-sky-700 bg-sky-50 hover:bg-sky-100 text-xs sm:text-sm font-medium dark:bg-sky-900/20 dark:text-sky-300 dark:border-sky-500/30">
+              <Printer className="w-4 h-4" /> Imprimir
+            </button>
 
-          <button onClick={() => setShowBackup(true)} className="btn-modern flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl border border-emerald-300 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 text-xs sm:text-sm font-medium dark:bg-emerald-900/20 dark:text-emerald-300 dark:border-emerald-500/30">
-            <Database className="w-4 h-4" /> Backups
-          </button>
+            <button onClick={() => setShowBackup(true)} className="btn-modern flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl border border-emerald-300 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 text-xs sm:text-sm font-medium dark:bg-emerald-900/20 dark:text-emerald-300 dark:border-emerald-500/30">
+              <Database className="w-4 h-4" /> Backups
+            </button>
 
-          <button onClick={() => setShowBin(true)} className="btn-modern flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl border border-rose-300 text-rose-700 bg-rose-50 hover:bg-rose-100 text-xs sm:text-sm font-medium dark:bg-rose-900/20 dark:text-rose-300 dark:border-rose-500/30">
-            <Trash2 className="w-4 h-4" /> Lixeira
-          </button>
+            <button onClick={() => setShowBin(true)} className="btn-modern flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl border border-rose-300 text-rose-700 bg-rose-50 hover:bg-rose-100 text-xs sm:text-sm font-medium dark:bg-rose-900/20 dark:text-rose-300 dark:border-rose-500/30">
+              <Trash2 className="w-4 h-4" /> Lixeira
+            </button>
 
-          <button onClick={() => setShowRequests(true)} className={`btn-modern flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl border font-medium transition-all text-xs sm:text-sm ${stats.totalPending > 0 ? 'bg-amber-500 border-amber-600 text-slate-900 shadow-md animate-pulse-gentle' : 'border-amber-300 text-amber-700 bg-amber-50 hover:bg-amber-100 dark:bg-amber-900/20 dark:text-amber-300 dark:border-amber-500/30'}`}>
-            <Bell className="w-4 h-4" /> Solicitações
-          </button>
+            <button onClick={() => setShowRequests(true)} className={`btn-modern flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl border font-medium transition-all text-xs sm:text-sm ${stats.totalPending > 0 ? 'bg-amber-500 border-amber-600 text-slate-900 shadow-md animate-pulse-gentle' : 'border-amber-300 text-amber-700 bg-amber-50 hover:bg-amber-100 dark:bg-amber-900/20 dark:text-amber-300 dark:border-amber-500/30'}`}>
+              <Bell className="w-4 h-4" /> Solicitações
+            </button>
+          </div>
         </div>
 
         {showList && <MemberList />}
@@ -278,6 +286,7 @@ export default function AdminPanel({ onLogout }: { onLogout: () => void }) {
       {showBin && <RecycleBinModal onClose={() => setShowBin(false)} />}
       {showBackup && <BackupModal onClose={() => setShowBackup(false)} />}
       {showRequests && <AdminRequestsModal onClose={() => { setShowRequests(false); loadDashboardStats(); }} />}
+      {showPrintReport && <PrintReportModal onClose={() => setShowPrintReport(false)} />}
     </div>
   );
 }

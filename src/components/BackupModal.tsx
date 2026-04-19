@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, ChangeEvent } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Database, Download } from 'lucide-react';
 import { collection, query, getDocs, setDoc, doc, addDoc } from 'firebase/firestore';
@@ -36,7 +36,7 @@ export default function BackupModal({ onClose }: { onClose: () => void }) {
     }
   };
 
-  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImport = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 

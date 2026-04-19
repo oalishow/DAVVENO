@@ -83,3 +83,47 @@ body {
 .dark body {
   background: linear-gradient(135deg, #0f172a 0%, #020617 100%);
 }
+
+/* Estilos de Impressão */
+@media print {
+  body {
+    background: white !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .print-only {
+    display: block !important;
+  }
+  .glass-panel {
+    box-shadow: none !important;
+    border: 1px solid #e2e8f0 !important;
+    background: white !important;
+    backdrop-filter: none !important;
+    margin: 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+  }
+  .result-card {
+    box-shadow: none !important;
+    border: 2px solid #e2e8f0 !important;
+    margin: 0 auto !important;
+    transform: none !important;
+    animation: none !important;
+  }
+  .fixed, .absolute {
+    position: relative !important;
+  }
+  .inset-0 {
+    position: static !important;
+    background: transparent !important;
+    backdrop-filter: none !important;
+    padding: 0 !important;
+    display: block !important;
+  }
+  .bg-slate-900\/50, .bg-black\/80 {
+    background-color: transparent !important;
+  }
+}

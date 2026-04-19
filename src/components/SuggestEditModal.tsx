@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, ChangeEvent } from 'react';
 import { createPortal } from 'react-dom';
-import { X, CheckCircle, Search } from 'lucide-react';
+import { X, CheckCircle, Search, Image as ImageIcon } from 'lucide-react';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db, appId } from '../lib/firebase';
 import { resizeAndConvertToBase64 } from '../lib/imageUtils';
 import type { Member } from '../types';
+import ImageCropperModal from './ImageCropperModal';
 
 interface SuggestEditModalProps {
   member: Member;
@@ -18,6 +19,8 @@ export default function SuggestEditModal({ member, onClose, onSubmitSuccess }: S
   const [roles, setRoles] = useState<string[]>(member.roles || []);
   const [course, setCourse] = useState(member.course || '');
   const [photo, setPhoto] = useState<File | null>(null);
+  const [photoBase64, setPhotoBase64] = useState<string | null>(null);
+  const [cropImageSrc, setCropImageSrc] = useState<string | null>(null);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -28,33 +31,36 @@ export default function SuggestEditModal({ member, onClose, onSubmitSuccess }: S
     setRoles(prev => prev.includes(role) ? prev.filter(r => r !== role) : [...prev, role]);
   };
 
+  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setCropImageSrc(URL.createObjectURL(file));
+    }
+    e.target.value = '';
+  };
+
   const handleSubmit = async () => {
-    const rolesChanged = JSON.stringify(roles.sort()) !== JSON.stringify((member.roles || []).sort());
+    const rolesChanged = JSON.stringify([...roles].sort()) !== JSON.stringify([...(member.roles || [])].sort());
     
-    if (name === member.name && ra === member.ra && course === member.course && !rolesChanged && !photo) {
-      setError('Altere pelo menos um dado.');
+    const nameMatch = (name || '').trim() === (member.name || '').trim();
+    const raMatch = (ra || '').trim() === (member.ra || '').trim();
+    const courseMatch = (course || '') === (member.course || '');
+
+    if (nameMatch && raMatch && courseMatch && !rolesChanged && !photoBase64) {
+      setError('Altere pelo menos um dado antes de enviar.');
       return;
     }
 
     setLoading(true);
     setError('');
 
-    let photoUrl = null;
-    if (photo) {
-      try {
-        photoUrl = await resizeAndConvertToBase64(photo);
-      } catch (e) {
-        console.error('File conversion fail', e);
-      }
-    }
-
     try {
       const pendingChanges: any = {};
-      if (name !== member.name) pendingChanges.name = name.trim();
-      if (ra !== member.ra) pendingChanges.ra = ra.trim();
-      if (course !== member.course) pendingChanges.course = course;
-      if (rolesChanged && roles.length > 0) pendingChanges.roles = roles;
-      if (photoUrl) pendingChanges.photoUrl = photoUrl;
+      if (!nameMatch) pendingChanges.name = name.trim();
+      if (!raMatch) pendingChanges.ra = ra.trim();
+      if (!courseMatch) pendingChanges.course = course;
+      if (rolesChanged) pendingChanges.roles = roles;
+      if (photoBase64) pendingChanges.photoUrl = photoBase64;
 
       await updateDoc(doc(db, `artifacts/${appId}/public/data/students`, member.id), {
         pendingChanges: pendingChanges

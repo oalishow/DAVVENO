@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, ChangeEvent } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Save, ShieldCheck, Image as ImageIcon } from 'lucide-react';
 import { collection, addDoc } from 'firebase/firestore';
@@ -32,7 +32,7 @@ export default function PublicRequestModal({ onClose, onSubmitSuccess }: PublicR
     setRoles(prev => prev.includes(role) ? prev.filter(r => r !== role) : [...prev, role]);
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       setCropImageSrc(URL.createObjectURL(file));
