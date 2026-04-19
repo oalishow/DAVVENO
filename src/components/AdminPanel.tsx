@@ -1,12 +1,14 @@
-import { useState } from 'react';
-import { Settings, UserPlus, Database, Trash2, Bell, Printer, Loader2 } from 'lucide-react';
-import { collection, addDoc } from 'firebase/firestore';
+import { useState, useEffect } from 'react';
+import { Settings, UserPlus, Database, Trash2, Bell, Printer, Loader2, Users, UserCheck, UserX, Clock, Image as ImageIcon } from 'lucide-react';
+import { collection, addDoc, query, getDocs } from 'firebase/firestore';
 import { db, appId } from '../lib/firebase';
-import { resizeAndConvertToBase64 } from '../lib/imageUtils';
+import type { Member } from '../types';
 import MemberList from './MemberList';
 import SettingsModal from './SettingsModal';
 import RecycleBinModal from './RecycleBinModal';
 import BackupModal from './BackupModal';
+import AdminRequestsModal from './AdminRequestsModal';
+import ImageCropperModal from './ImageCropperModal';
 
 export default function AdminPanel({ onLogout }: { onLogout: () => void }) {
   const [name, setName] = useState('');
@@ -14,19 +16,53 @@ export default function AdminPanel({ onLogout }: { onLogout: () => void }) {
   const [validity, setValidity] = useState('');
   const [roles, setRoles] = useState<string[]>([]);
   const [course, setCourse] = useState('');
-  const [photo, setPhoto] = useState<File | null>(null);
+  
+  const [photoBase64, setPhotoBase64] = useState<string | null>(null);
+  const [cropImageSrc, setCropImageSrc] = useState<string | null>(null);
 
   const [status, setStatus] = useState<{ msg: string; type: 'success' | 'error' | 'loading' } | null>(null);
   const [showList, setShowList] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showBin, setShowBin] = useState(false);
   const [showBackup, setShowBackup] = useState(false);
+  const [showRequests, setShowRequests] = useState(false);
+
+  // Dash Stats
+  const [stats, setStats] = useState({ totalActive: 0, totalInactive: 0, totalPending: 0, totalTrash: 0 });
 
   const availableRoles = ["ALUNO(A)", "PROFESSOR(A)", "COLABORADOR(A)", "SEMINARISTA", "PADRE", "DIÁCONO", "BISPO"];
 
   const toggleRole = (role: string) => {
     setRoles(prev => prev.includes(role) ? prev.filter(r => r !== role) : [...prev, role]);
   };
+
+  const loadDashboardStats = async () => {
+    try {
+      const q = query(collection(db, `artifacts/${appId}/public/data/students`));
+      const snapshot = await getDocs(q);
+      const allMembers = snapshot.docs.map((doc) => doc.data() as Member);
+      
+      let active = 0; let inactive = 0; let pending = 0; let trash = 0;
+      allMembers.forEach(m => {
+        if (m.deletedAt) {
+          trash++;
+        } else if (m.isApproved === false || m.pendingChanges) {
+          pending++;
+        } else if (m.isActive === false) {
+          inactive++;
+        } else {
+          active++;
+        }
+      });
+      setStats({ totalActive: active, totalInactive: inactive, totalPending: pending, totalTrash: trash });
+    } catch(e) {
+      console.error(e);
+    }
+  };
+
+  useEffect(() => {
+    loadDashboardStats();
+  }, [showList, showBin, showRequests]); // Reload stats when modals close
 
   const handleRegister = async () => {
     if (!name || !validity) {
@@ -37,15 +73,6 @@ export default function AdminPanel({ onLogout }: { onLogout: () => void }) {
 
     setStatus({ msg: 'A processar registo...', type: 'loading' });
 
-    let photoUrl: string | null = null;
-    if (photo) {
-      try {
-        photoUrl = await resizeAndConvertToBase64(photo);
-      } catch (e) {
-        console.error('Error with photo:', e);
-      }
-    }
-
     try {
       const alphaCode = Array(6).fill(0).map(() => 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'[Math.floor(Math.random() * 36)]).join('');
       const membersRef = collection(db, `artifacts/${appId}/public/data/students`);
@@ -55,7 +82,7 @@ export default function AdminPanel({ onLogout }: { onLogout: () => void }) {
         ra: ra.trim(),
         validityDate: validity,
         alphaCode,
-        photoUrl,
+        photoUrl: photoBase64,
         roles,
         course,
         isActive: true,
@@ -64,8 +91,9 @@ export default function AdminPanel({ onLogout }: { onLogout: () => void }) {
       });
 
       setStatus({ msg: 'Identidade criada com sucesso!', type: 'success' });
-      setName(''); setRa(''); setValidity(''); setCourse(''); setRoles([]); setPhoto(null);
+      setName(''); setRa(''); setValidity(''); setCourse(''); setRoles([]); setPhotoBase64(null);
       setTimeout(() => setStatus(null), 4000);
+      loadDashboardStats();
     } catch (error) {
       console.error(error);
       setStatus({ msg: 'Falha no registo. Verifique a conexão.', type: 'error' });
@@ -75,7 +103,18 @@ export default function AdminPanel({ onLogout }: { onLogout: () => void }) {
 
   return (
     <div className="animated-fade-in">
-      <div className="flex justify-between items-center mb-6 sm:mb-8 border-b border-slate-200 dark:border-slate-700/60 pb-3 sm:pb-4">
+      {cropImageSrc && (
+        <ImageCropperModal
+          imageSrc={cropImageSrc}
+          onClose={() => setCropImageSrc(null)}
+          onCropComplete={(croppedBase64) => {
+            setPhotoBase64(croppedBase64);
+            setCropImageSrc(null);
+          }}
+        />
+      )}
+
+      <div className="flex justify-between items-center mb-6 border-b border-slate-200 dark:border-slate-700/60 pb-3 sm:pb-4">
         <h2 className="text-lg sm:text-xl font-semibold text-slate-800 dark:text-slate-200">Painel de Gestão</h2>
         <div className="flex items-center gap-2 sm:gap-3">
           <button onClick={() => setShowSettings(true)} className="p-1.5 sm:p-2 text-sky-600 dark:text-sky-400 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-lg transition-all" title="Configurações">
@@ -84,6 +123,39 @@ export default function AdminPanel({ onLogout }: { onLogout: () => void }) {
           <button onClick={onLogout} className="py-1.5 px-3 sm:py-2 sm:px-4 border border-slate-300 dark:border-slate-600/60 rounded-lg text-xs sm:text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-rose-50 dark:hover:text-rose-500 transition-all">
             Sair
           </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-8">
+        <div className="bg-white dark:bg-slate-800/40 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/50 flex flex-col items-center justify-center text-center shadow-sm">
+           <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-2">
+             <UserCheck className="w-4 h-4" />
+           </div>
+           <p className="text-2xl font-black text-slate-800 dark:text-slate-200">{stats.totalActive}</p>
+           <p className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Ativos</p>
+        </div>
+        <div className="bg-white dark:bg-slate-800/40 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/50 flex flex-col items-center justify-center text-center shadow-sm">
+           <div className="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center mb-2 relative">
+             <Clock className="w-4 h-4" />
+             {stats.totalPending > 0 && <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-rose-500 rounded-full animate-ping"></span>}
+             {stats.totalPending > 0 && <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-rose-500 rounded-full"></span>}
+           </div>
+           <p className="text-2xl font-black text-slate-800 dark:text-slate-200">{stats.totalPending}</p>
+           <p className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Pendentes</p>
+        </div>
+        <div className="bg-white dark:bg-slate-800/40 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/50 flex flex-col items-center justify-center text-center shadow-sm">
+           <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center mb-2">
+             <UserX className="w-4 h-4" />
+           </div>
+           <p className="text-2xl font-black text-slate-800 dark:text-slate-200">{stats.totalInactive}</p>
+           <p className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Inativos</p>
+        </div>
+        <div className="bg-white dark:bg-slate-800/40 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/50 flex flex-col items-center justify-center text-center shadow-sm">
+           <div className="w-8 h-8 rounded-full bg-rose-100 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400 flex items-center justify-center mb-2">
+             <Trash2 className="w-4 h-4" />
+           </div>
+           <p className="text-2xl font-black text-slate-800 dark:text-slate-200">{stats.totalTrash}</p>
+           <p className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Na Lixeira</p>
         </div>
       </div>
 
@@ -135,7 +207,22 @@ export default function AdminPanel({ onLogout }: { onLogout: () => void }) {
 
           <div className="md:col-span-2 border-t border-slate-200 dark:border-slate-700/50 pt-3 mt-1">
              <label className="block text-[10px] sm:text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Fotografia do Membro (Opcional)</label>
-             <input type="file" accept="image/*" onChange={(e) => setPhoto(e.target.files?.[0] || null)} className="w-full text-sm text-slate-600 dark:text-slate-400 file:cursor-pointer file:mr-4 file:py-1.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-sky-100 file:text-sky-600 hover:file:bg-sky-200 transition-all" />
+             <div className="flex items-center gap-4">
+               {photoBase64 && (
+                 <div className="w-12 h-12 rounded-full overflow-hidden border border-slate-300 dark:border-slate-600 shadow-sm flex-shrink-0">
+                   <img src={photoBase64} alt="Preview" className="w-full h-full object-cover" />
+                 </div>
+               )}
+               <label className="flex-1 cursor-pointer flex items-center justify-center gap-2 py-2 px-4 rounded-xl border-2 border-dashed border-sky-300 bg-sky-50 text-sky-700 hover:bg-sky-100 transition-colors text-sm font-medium dark:bg-sky-900/20 dark:border-sky-600/50 dark:text-sky-400">
+                 <ImageIcon className="w-4 h-4"/>
+                 {photoBase64 ? 'Alterar Fotografia' : 'Escolher e Recortar Fotografia'}
+                 <input type="file" accept="image/*" onChange={(e) => {
+                   const file = e.target.files?.[0];
+                   if (file) setCropImageSrc(URL.createObjectURL(file));
+                   e.target.value = '';
+                 }} className="hidden" />
+               </label>
+             </div>
           </div>
         </div>
 
@@ -179,7 +266,7 @@ export default function AdminPanel({ onLogout }: { onLogout: () => void }) {
             <Trash2 className="w-4 h-4" /> Lixeira
           </button>
 
-          <button className="btn-modern flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl border border-amber-300 text-amber-700 bg-amber-50 hover:bg-amber-100 text-xs sm:text-sm font-medium dark:bg-amber-900/20 dark:text-amber-300 dark:border-amber-500/30">
+          <button onClick={() => setShowRequests(true)} className={`btn-modern flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl border font-medium transition-all text-xs sm:text-sm ${stats.totalPending > 0 ? 'bg-amber-500 border-amber-600 text-slate-900 shadow-md animate-pulse-gentle' : 'border-amber-300 text-amber-700 bg-amber-50 hover:bg-amber-100 dark:bg-amber-900/20 dark:text-amber-300 dark:border-amber-500/30'}`}>
             <Bell className="w-4 h-4" /> Solicitações
           </button>
         </div>
@@ -190,6 +277,7 @@ export default function AdminPanel({ onLogout }: { onLogout: () => void }) {
       {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
       {showBin && <RecycleBinModal onClose={() => setShowBin(false)} />}
       {showBackup && <BackupModal onClose={() => setShowBackup(false)} />}
+      {showRequests && <AdminRequestsModal onClose={() => { setShowRequests(false); loadDashboardStats(); }} />}
     </div>
   );
 }

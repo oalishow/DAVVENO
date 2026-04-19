@@ -1,4 +1,5 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Database, Download } from 'lucide-react';
 import { collection, query, getDocs, setDoc, doc, addDoc } from 'firebase/firestore';
 import { db, appId } from '../lib/firebase';
@@ -73,8 +74,13 @@ export default function BackupModal({ onClose }: { onClose: () => void }) {
     setTimeout(() => setStatus(null), 4000);
   };
 
-  return (
-    <div className="fixed inset-0 bg-slate-900/50 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-[60] overflow-y-auto">
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = 'unset'; };
+  }, []);
+
+  return createPortal(
+    <div className="fixed inset-0 bg-slate-900/50 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-[100] overflow-y-auto">
       <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-3xl shadow-2xl p-6 w-full max-w-sm animated-scale-in">
         <div className="flex justify-between items-center mb-6 pb-4 border-b border-slate-200 dark:border-slate-700">
           <h2 className="text-xl font-bold text-sky-600 dark:text-sky-400 flex items-center gap-2">
@@ -110,6 +116,7 @@ export default function BackupModal({ onClose }: { onClose: () => void }) {
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

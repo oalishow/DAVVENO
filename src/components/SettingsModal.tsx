@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Save, ShieldAlert, Mail, Link } from 'lucide-react';
 import { PASSWORD_STORAGE_KEY, URL_STORAGE_KEY, EMAIL_SETTINGS_KEY, DEFAULT_ADMIN_PASSWORD, DEFAULT_PUBLIC_URL } from '../lib/constants';
 
@@ -11,6 +12,8 @@ export default function SettingsModal({ onClose }: { onClose: () => void }) {
 
   useEffect(() => {
     setUrl(localStorage.getItem(URL_STORAGE_KEY) || DEFAULT_PUBLIC_URL);
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = 'unset'; };
   }, []);
 
   const handleSaveUrl = () => {
@@ -39,8 +42,8 @@ export default function SettingsModal({ onClose }: { onClose: () => void }) {
     setTimeout(() => setStatus(null), 3000);
   };
 
-  return (
-    <div className="fixed inset-0 bg-slate-900/50 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-[60] overflow-y-auto">
+  return createPortal(
+    <div className="fixed inset-0 bg-slate-900/50 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-[100] overflow-y-auto">
       <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-3xl shadow-2xl p-6 w-full max-w-md animated-scale-in">
         <div className="flex justify-between items-center mb-6 pb-4 border-b border-slate-200 dark:border-slate-700">
           <h2 className="text-xl font-bold text-sky-600 dark:text-sky-400">Configurações Gerais</h2>
@@ -76,6 +79,7 @@ export default function SettingsModal({ onClose }: { onClose: () => void }) {
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

@@ -1,0 +1,159 @@
+import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
+import { X, Check } from 'lucide-react';
+import { collection, query, getDocs, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { db, appId } from '../lib/firebase';
+import type { Member } from '../types';
+
+export default function AdminRequestsModal({ onClose }: { onClose: () => void }) {
+  const [requests, setRequests] = useState<Member[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchRequests = async () => {
+    setLoading(true);
+    try {
+      const q = query(collection(db, `artifacts/${appId}/public/data/students`));
+      const snapshot = await getDocs(q);
+      const members = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }) as Member);
+      
+      // Filtrar Não-Aprovados E também aqueles que têm Sugestões de Correção Pendentes.
+      const pendingReqs = members.filter(m => !m.deletedAt && (m.isApproved === false || m.pendingChanges));
+      setRequests(pendingReqs);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchRequests();
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = 'unset'; };
+  }, []);
+
+  const handleApproveNew = async (id: string) => {
+    try {
+      // Cria um código nativo AlphaCode e ativa a identidade provisoriamente.
+      const alphaCode = Array(6).fill(0).map(() => 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'[Math.floor(Math.random() * 36)]).join('');
+      await updateDoc(doc(db, `artifacts/${appId}/public/data/students`, id), {
+        isApproved: true,
+        isActive: true,
+        alphaCode,
+        validityDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0] // Vence em 1 ano por segurança
+      });
+      fetchRequests();
+    } catch (err) {
+      console.error(err);
+      alert('Erro ao aprovar membro.');
+    }
+  };
+
+  const handleApproveEdit = async (member: Member) => {
+    try {
+      const pc = member.pendingChanges;
+      const updatePayload: any = { pendingChanges: null };
+      if (pc.name) updatePayload.name = pc.name;
+      if (pc.ra) updatePayload.ra = pc.ra;
+      if (pc.roles) updatePayload.roles = pc.roles;
+      if (pc.course) updatePayload.course = pc.course;
+      if (pc.photoUrl) updatePayload.photoUrl = pc.photoUrl;
+
+      await updateDoc(doc(db, `artifacts/${appId}/public/data/students`, member.id), updatePayload);
+      fetchRequests();
+    } catch (e) {
+      console.error(e);
+      alert('Erro ao aplicar pacote de atualizações.');
+    }
+  };
+
+  const handleReject = async (id: string, isEdit: boolean) => {
+    if (!confirm(isEdit ? 'Rejeitar estas alterações?' : 'Recusar cadastro submetido? (Esta ação elimina os dados)')) return;
+    
+    try {
+      const mRef = doc(db, `artifacts/${appId}/public/data/students`, id);
+      if (isEdit) {
+        await updateDoc(mRef, { pendingChanges: null });
+      } else {
+        await deleteDoc(mRef);
+      }
+      fetchRequests();
+    } catch(e) {
+      console.error(e);
+      alert('Falha ao rejeitar.');
+    }
+  };
+
+  return createPortal(
+    <div className="fixed inset-0 bg-slate-900/50 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-[100] overflow-y-auto">
+      <div className="bg-white dark:bg-slate-800 border border-amber-200 dark:border-amber-900/50 rounded-3xl shadow-2xl p-6 w-full max-w-2xl animated-scale-in">
+        <div className="flex justify-between items-center mb-6 pb-4 border-b border-slate-200 dark:border-slate-700">
+          <h2 className="text-xl font-bold text-amber-500 dark:text-amber-400 flex items-center gap-2">
+            Aprovações Pendentes
+          </h2>
+          <button onClick={onClose} className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition">
+            <X className="w-5 h-5 text-slate-500" />
+          </button>
+        </div>
+
+        <div className="space-y-4 max-h-[60vh] overflow-y-auto custom-scrollbar pr-2">
+          {loading ? (
+             <div className="flex justify-center p-6"><div className="w-6 h-6 border-4 border-amber-200 border-t-amber-600 rounded-full animate-spin"></div></div>
+          ) : requests.length === 0 ? (
+            <p className="text-slate-500 italic text-center p-4 text-sm">Nenhuma solicitação pendente no momento.</p>
+          ) : (
+            requests.map(req => {
+              const isNew = req.isApproved === false;
+              const avatarSrc = req.photoUrl || 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%2364748b"><path d="M12 12a5 5 0 100-10 5 5 0 000 10zm0 2c-3.33 0-10 1.67-10 5v2h20v-2c0-3.33-6.67-5-10-5z"/></svg>';
+              
+              if (isNew) {
+                return (
+                  <div key={req.id} className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-sky-200 dark:border-sky-500/30">
+                    <div className="flex items-center gap-2 mb-2">
+                        <span className="bg-sky-500 text-white text-[9px] uppercase font-bold px-2 py-0.5 rounded">Novo Registo</span>
+                        <span className="text-xs text-slate-500 dark:text-slate-400">{req.createdAt ? new Date(req.createdAt).toLocaleDateString() : ''}</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                        <img src={avatarSrc} className="w-12 h-12 rounded-full border border-slate-300 dark:border-slate-600 object-cover bg-white dark:bg-slate-800" />
+                        <div>
+                            <p className="font-bold text-sm text-slate-800 dark:text-slate-200">{req.name} {req.ra && <span className="text-xs font-normal text-slate-500 border border-slate-300 px-1 rounded ml-1">RA: {req.ra}</span>}</p>
+                            <p className="text-xs text-slate-500 dark:text-slate-400">{req.roles?.join(', ')} • {req.course || 'S/ Curso'}</p>
+                            {req.email && <p className="text-[10px] text-sky-600 dark:text-sky-400 mt-0.5">{req.email}</p>}
+                        </div>
+                    </div>
+                    <div className="flex gap-2 mt-3 pt-3 border-t border-slate-200 dark:border-slate-700">
+                        <button onClick={() => handleApproveNew(req.id)} className="flex-1 py-2 bg-emerald-100 text-emerald-700 hover:bg-emerald-500 hover:text-white rounded-lg text-xs font-semibold border border-emerald-300 transition-colors">Aprovar Identidade</button>
+                        <button onClick={() => handleReject(req.id, false)} className="flex-1 py-2 bg-rose-100 text-rose-700 hover:bg-rose-500 hover:text-white rounded-lg text-xs font-semibold border border-rose-300 transition-colors">Recusar</button>
+                    </div>
+                  </div>
+                );
+              } else {
+                const pc = req.pendingChanges;
+                return (
+                  <div key={req.id} className="bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-amber-200 dark:border-amber-500/30">
+                      <div className="flex items-center gap-2 mb-2">
+                          <span className="bg-amber-500 text-slate-900 text-[9px] uppercase font-bold px-2 py-0.5 rounded">Sugestão de Edição</span>
+                          <span className="text-xs text-slate-500 dark:text-slate-400 font-bold ml-auto">{req.name}</span>
+                      </div>
+                      <div className="bg-white dark:bg-slate-800/80 p-3 rounded-lg text-xs space-y-2 border border-slate-200 dark:border-slate-700">
+                          {pc.name && <p><span className="text-slate-500">Novo Nome:</span> <span className="text-amber-600 dark:text-amber-300 font-medium">{pc.name}</span></p>}
+                          {pc.ra && <p><span className="text-slate-500">Novo RA:</span> <span className="text-amber-600 dark:text-amber-300 font-medium">{pc.ra}</span></p>}
+                          {pc.roles && <p><span className="text-slate-500">Novo Vínculo:</span> <span className="text-amber-600 dark:text-amber-300 font-medium">{pc.roles.join(', ')}</span></p>}
+                          {pc.course && <p><span className="text-slate-500">Novo Curso:</span> <span className="text-amber-600 dark:text-amber-300 font-medium">{pc.course}</span></p>}
+                          {pc.photoUrl && <div className="flex items-center gap-2 mt-1"><span className="text-slate-500">Nova Foto:</span> <img src={pc.photoUrl} className="w-8 h-8 rounded border border-amber-300 object-cover" /></div>}
+                      </div>
+                      <div className="flex gap-2 mt-3">
+                          <button onClick={() => handleApproveEdit(req)} className="flex-1 py-1.5 bg-emerald-100 text-emerald-700 hover:bg-emerald-500 hover:text-white rounded-lg text-xs font-semibold border border-emerald-300 transition-colors">Aceitar Alterações</button>
+                          <button onClick={() => handleReject(req.id, true)} className="flex-1 py-1.5 bg-rose-100 text-rose-700 hover:bg-rose-500 hover:text-white rounded-lg text-xs font-semibold border border-rose-300 transition-colors">Ignorar</button>
+                      </div>
+                  </div>
+                );
+              }
+            })
+          )}
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+}

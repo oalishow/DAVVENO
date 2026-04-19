@@ -63,22 +63,24 @@ export default function VerificationResult({ member, status, onReset }: Verifica
   const handleExport = async () => {
     setExporting(true);
     try {
-      // Lazy load html2canvas to save bundle size
-      const html2canvas = (await import('html2canvas')).default;
+      const { toPng } = await import('html-to-image');
       const card = document.getElementById('validation-card-capture');
       if (!card) return;
 
       const isDarkMode = document.documentElement.classList.contains('dark');
-      const canvas = await html2canvas(card, {
+      
+      const url = await toPng(card, {
         backgroundColor: isDarkMode ? '#0f172a' : '#ffffff',
-        scale: 2,
-        logging: false,
-        useCORS: true
+        pixelRatio: 2,
+        style: {
+          // Fixes an issue where animations or transforms might clip the canvas during capture
+          transform: 'none',
+          animation: 'none'
+        }
       });
 
       const prefix = status === 'VALID' ? 'Validacao' : 'Recusa';
-      const fileName = `VerifyID_${prefix}_${safeName.replace(/\\s+/g, '_')}.png`;
-      const url = canvas.toDataURL('image/png');
+      const fileName = `VerifyID_${prefix}_${safeName.replace(/\s+/g, '_')}.png`;
       
       const link = document.createElement('a');
       link.href = url;

@@ -1,11 +1,12 @@
-import { useState, useRef } from 'react';
-import { X, Save, Trash2, ShieldAlert, Download, QrCode } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
+import { X, Save, Trash2, ShieldAlert, Download, QrCode, Image as ImageIcon } from 'lucide-react';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db, appId } from '../lib/firebase';
 import type { Member } from '../types';
-import { resizeAndConvertToBase64 } from '../lib/imageUtils';
 import { QRCodeCanvas } from 'qrcode.react';
 import { URL_STORAGE_KEY, DEFAULT_PUBLIC_URL } from '../lib/constants';
+import ImageCropperModal from './ImageCropperModal';
 
 interface MemberEditModalProps {
   member: Member;
@@ -21,7 +22,9 @@ export default function MemberEditModal({ member, onClose, onUpdate }: MemberEdi
   const [isActive, setIsActive] = useState(member.isActive !== false);
   const [course, setCourse] = useState(member.course || '');
   const [roles, setRoles] = useState<string[]>(member.roles || []);
-  const [photo, setPhoto] = useState<File | null>(null);
+  
+  const [photoBase64, setPhotoBase64] = useState<string | null>(null);
+  const [cropImageSrc, setCropImageSrc] = useState<string | null>(null);
   
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -33,6 +36,14 @@ export default function MemberEditModal({ member, onClose, onUpdate }: MemberEdi
     setRoles(prev => prev.includes(role) ? prev.filter(r => r !== role) : [...prev, role]);
   };
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setCropImageSrc(URL.createObjectURL(file));
+    }
+    e.target.value = '';
+  };
+
   const handleUpdate = async () => {
     if (!name || !validity) {
       setError('Nome e Validade são obrigatórios.');
@@ -42,14 +53,7 @@ export default function MemberEditModal({ member, onClose, onUpdate }: MemberEdi
     setLoading(true);
     setError('');
     
-    let photoUrl = member.photoUrl;
-    if (photo) {
-      try {
-        photoUrl = await resizeAndConvertToBase64(photo);
-      } catch (e) {
-        console.error('Photo error', e);
-      }
-    }
+    let photoUrl = photoBase64 || member.photoUrl;
 
     try {
       const docRef = doc(db, `artifacts/${appId}/public/data/students`, member.id);
@@ -91,8 +95,24 @@ export default function MemberEditModal({ member, onClose, onUpdate }: MemberEdi
 
   const verificationUrl = `${localStorage.getItem(URL_STORAGE_KEY) || DEFAULT_PUBLIC_URL}?verify=${member.alphaCode}`;
 
-  return (
-    <div className="fixed inset-0 bg-slate-900/50 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 z-[55] overflow-y-auto">
+  useEffect(() => {
+    // Evita o scroll de fundo quando o modal está aberto
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = 'unset'; };
+  }, []);
+
+  return createPortal(
+    <div className="fixed inset-0 bg-slate-900/50 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 z-[100] overflow-y-auto">
+      {cropImageSrc && (
+        <ImageCropperModal
+          imageSrc={cropImageSrc}
+          onClose={() => setCropImageSrc(null)}
+          onCropComplete={(croppedBase64) => {
+            setPhotoBase64(croppedBase64);
+            setCropImageSrc(null);
+          }}
+        />
+      )}
       <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl p-4 sm:p-6 w-full max-w-4xl my-auto max-h-[95vh] overflow-y-auto custom-scrollbar animated-scale-in">
         
         <div className="flex justify-between items-center mb-4 pb-3 border-b border-slate-200 dark:border-slate-700/60 sticky top-0 bg-white dark:bg-slate-800 z-20">
@@ -144,9 +164,15 @@ export default function MemberEditModal({ member, onClose, onUpdate }: MemberEdi
                 </div>
               </div>
               
-              <div>
-                <label className="text-xs font-medium text-slate-500 mb-1 block mt-2">Atualizar Foto (opcional)</label>
-                <input type="file" accept="image/*" onChange={e => setPhoto(e.target.files?.[0] || null)} className="w-full text-xs text-slate-600 file:border-0 file:rounded file:px-3 file:py-1 file:bg-sky-100 file:text-sky-700" />
+              <div className="pt-2 border-t border-slate-200 dark:border-slate-700/50 flex flex-col sm:flex-row items-center gap-4">
+                 <div className="w-12 h-12 rounded-full overflow-hidden border border-slate-300 dark:border-slate-600 flex-shrink-0 relative">
+                   <img src={photoBase64 || member.photoUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(name || 'User')}&background=e2e8f0&color=475569`} alt="User" className="w-full h-full object-cover" />
+                 </div>
+                 <label className="flex-1 cursor-pointer flex items-center justify-center gap-2 py-2 px-3 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 transition-colors text-xs font-semibold dark:bg-slate-800 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-700">
+                   <ImageIcon className="w-4 h-4"/>
+                   {photoBase64 ? 'Alterar Fotografia' : 'Substituir/Recortar Foto'}
+                   <input type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
+                 </label>
               </div>
             </div>
           </div>
@@ -177,6 +203,7 @@ export default function MemberEditModal({ member, onClose, onUpdate }: MemberEdi
         </div>
 
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

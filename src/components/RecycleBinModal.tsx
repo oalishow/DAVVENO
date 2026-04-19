@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Trash2, ShieldAlert } from 'lucide-react';
 import { collection, query, getDocs, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 import { db, appId } from '../lib/firebase';
@@ -10,6 +11,8 @@ export default function RecycleBinModal({ onClose }: { onClose: () => void }) {
 
   useEffect(() => {
     loadDeletedMembers();
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = 'unset'; };
   }, []);
 
   const loadDeletedMembers = async () => {
@@ -56,8 +59,8 @@ export default function RecycleBinModal({ onClose }: { onClose: () => void }) {
     }
   };
 
-  return (
-    <div className="fixed inset-0 bg-slate-900/50 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-[60] overflow-y-auto">
+  return createPortal(
+    <div className="fixed inset-0 bg-slate-900/50 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-[100] overflow-y-auto">
       <div className="bg-white dark:bg-slate-800 border border-rose-200 dark:border-rose-900/50 rounded-3xl shadow-2xl p-6 w-full max-w-lg animated-scale-in">
         <div className="flex justify-between items-center mb-6 pb-4 border-b border-slate-200 dark:border-slate-700">
           <h2 className="text-xl font-bold text-rose-600 dark:text-rose-400 flex items-center gap-2">
@@ -93,6 +96,7 @@ export default function RecycleBinModal({ onClose }: { onClose: () => void }) {
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
