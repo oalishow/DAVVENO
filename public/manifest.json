@@ -1,0 +1,22 @@
+{
+  "name": "Verify ID - Identidade Digital",
+  "short_name": "Verify ID",
+  "description": "Sistema avançado de verificação de identidades institucionais.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0ea5e9",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/1067/1067256.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://cdn-icons-png.flaticon.com/192/1067/1067256.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    }
+  ]
+}

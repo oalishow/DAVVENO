@@ -7,6 +7,7 @@ import type { Member } from '../types';
 import VerificationResult from './VerificationResult';
 import PublicRequestModal from './PublicRequestModal';
 import SuggestEditModal from './SuggestEditModal';
+import BiometricVerification from './BiometricVerification';
 
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -20,6 +21,7 @@ export default function Verifier() {
 
   const [showPublicReq, setShowPublicReq] = useState(false);
   const [showSuggestEdit, setShowSuggestEdit] = useState(false);
+  const [showBiometric, setShowBiometric] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
 
   useEffect(() => {
@@ -201,14 +203,32 @@ export default function Verifier() {
             setValidationResult(null);
             setCodeInput('');
             setSuccessMsg('');
+            setShowBiometric(false);
           }}
         />
         {validationResult.member && validationResult.status !== 'NOT_FOUND' && (
-          <div className="mt-4 w-full max-w-sm px-1 no-print">
+          <div className="mt-4 w-full max-w-sm px-1 no-print space-y-3">
+             <button 
+               onClick={() => setShowBiometric(true)} 
+               className="w-full py-4 px-4 rounded-xl text-sm font-black text-white bg-slate-900 border border-slate-700 shadow-xl shadow-slate-900/20 hover:bg-slate-800 transition-all flex items-center justify-center gap-2 group"
+             >
+                <div className="w-6 h-6 rounded-lg bg-sky-500/20 flex items-center justify-center text-sky-400 group-hover:scale-110 transition-transform">
+                   <ScanLine className="w-4 h-4" />
+                </div>
+                VALIDAÇÃO BIOMÉTRICA (IA)
+             </button>
+
              <button onClick={() => setShowSuggestEdit(true)} className="w-full py-3 px-4 rounded-xl text-sm font-bold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 shadow-sm dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-700 transition-colors">
                Sugerir Alteração / Correção
              </button>
           </div>
+        )}
+
+        {showBiometric && validationResult.member && (
+          <BiometricVerification 
+            member={validationResult.member} 
+            onClose={() => setShowBiometric(false)} 
+          />
         )}
 
         {showSuggestEdit && validationResult.member && (
