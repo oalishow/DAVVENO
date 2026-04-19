@@ -106,7 +106,7 @@ export default function MemberEditModal({ member, onClose, onUpdate }: MemberEdi
   }, []);
 
   return createPortal(
-    <div className="fixed inset-0 bg-slate-900/50 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 z-[100] overflow-y-auto">
+    <div className="fixed inset-0 bg-slate-900/40 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 z-[100] overflow-y-auto">
       {cropImageSrc && (
         <ImageCropperModal
           imageSrc={cropImageSrc}
@@ -117,12 +117,12 @@ export default function MemberEditModal({ member, onClose, onUpdate }: MemberEdi
           }}
         />
       )}
-      <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl p-4 sm:p-6 w-full max-w-4xl my-auto max-h-[95vh] overflow-y-auto custom-scrollbar animated-scale-in">
+      <div className="bg-white/95 dark:bg-slate-800/95 backdrop-blur-xl border border-slate-200 dark:border-slate-700/50 rounded-2xl shadow-[0_30px_60px_rgba(0,0,0,0.12)] p-4 sm:p-6 w-full max-w-4xl my-auto max-h-[95vh] overflow-y-auto custom-scrollbar animated-scale-in">
         
-        <div className="flex justify-between items-center mb-4 pb-3 border-b border-slate-200 dark:border-slate-700/60 sticky top-0 bg-white dark:bg-slate-800 z-20">
+        <div className="flex justify-between items-center mb-4 pb-3 border-b border-slate-100 dark:border-slate-700/60 sticky top-0 bg-white/5 dark:bg-slate-800/5 backdrop-blur-sm z-20">
           <h2 className="text-xl font-bold text-sky-600 dark:text-sky-400">Ficha do Membro</h2>
-          <button onClick={onClose} className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors no-print">
-            <X className="w-5 h-5 text-slate-500" />
+          <button onClick={onClose} className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors no-print">
+            <X className="w-5 h-5 text-slate-400 dark:text-slate-500" />
           </button>
         </div>
 

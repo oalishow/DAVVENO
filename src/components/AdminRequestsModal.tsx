@@ -85,14 +85,14 @@ export default function AdminRequestsModal({ onClose }: { onClose: () => void })
   };
 
   return createPortal(
-    <div className="fixed inset-0 bg-slate-900/50 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-[100] overflow-y-auto">
-      <div className="bg-white dark:bg-slate-800 border border-amber-200 dark:border-amber-900/50 rounded-3xl shadow-2xl p-6 w-full max-w-2xl animated-scale-in">
-        <div className="flex justify-between items-center mb-6 pb-4 border-b border-slate-200 dark:border-slate-700">
-          <h2 className="text-xl font-bold text-amber-500 dark:text-amber-400 flex items-center gap-2">
+    <div className="fixed inset-0 bg-slate-900/40 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-[100] overflow-y-auto">
+      <div className="bg-white/95 dark:bg-slate-800/95 backdrop-blur-xl border border-slate-200 dark:border-slate-700/50 rounded-3xl shadow-[0_30px_60px_rgba(0,0,0,0.12)] p-6 w-full max-w-2xl animated-scale-in">
+        <div className="flex justify-between items-center mb-6 pb-4 border-b border-slate-100 dark:border-slate-700/60">
+          <h2 className="text-xl font-bold text-amber-600 dark:text-amber-400 flex items-center gap-2">
             Aprovações Pendentes
           </h2>
-          <button onClick={onClose} className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition">
-            <X className="w-5 h-5 text-slate-500" />
+          <button onClick={onClose} className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700/50 transition">
+            <X className="w-5 h-5 text-slate-400 dark:text-slate-500" />
           </button>
         </div>
 

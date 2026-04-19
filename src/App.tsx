@@ -48,17 +48,16 @@ export default function App() {
         <div className="relative z-10 space-y-6 sm:space-y-8">
           <Header />
 
-          {/* Abas de Navegação */}
-          <div className="flex bg-slate-100/80 dark:bg-slate-900/60 rounded-xl p-1.5 shadow-inner border border-slate-200 dark:border-slate-700/50 no-print">
+          <div className="flex bg-slate-200/50 dark:bg-slate-900/60 rounded-xl p-1 shadow-inner border border-slate-200/50 dark:border-slate-700/50 no-print">
             <button 
               onClick={() => setActiveTab('verifier')}
-              className={`w-1/2 py-2.5 text-xs sm:text-sm font-medium rounded-lg transition-all ${activeTab === 'verifier' ? 'bg-gradient-to-r from-sky-500 to-blue-500 text-white shadow-lg' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-200/50 dark:hover:bg-slate-800'}`}
+              className={`w-1/2 py-2.5 text-xs sm:text-sm font-bold rounded-lg transition-all duration-300 ${activeTab === 'verifier' ? 'bg-white dark:bg-sky-600 text-sky-600 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
             >
               Verificar Identidade
             </button>
             <button 
               onClick={() => setActiveTab('admin')}
-              className={`w-1/2 py-2.5 text-xs sm:text-sm font-medium rounded-lg transition-all ${activeTab === 'admin' ? 'bg-gradient-to-r from-sky-500 to-blue-500 text-white shadow-lg' : 'text-slate-600 dark:text-slate-300 hover:bg-slate-200/50 dark:hover:bg-slate-800'}`}
+              className={`w-1/2 py-2.5 text-xs sm:text-sm font-bold rounded-lg transition-all duration-300 ${activeTab === 'admin' ? 'bg-white dark:bg-sky-600 text-sky-600 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
             >
               Área Administrativa
             </button>

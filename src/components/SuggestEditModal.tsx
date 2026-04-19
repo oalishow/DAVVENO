@@ -81,7 +81,7 @@ export default function SuggestEditModal({ member, onClose, onSubmitSuccess }: S
   }, []);
 
   return createPortal(
-    <div className="fixed inset-0 bg-slate-900/50 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-[100] overflow-y-auto">
+    <div className="fixed inset-0 bg-slate-900/40 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-[100] overflow-y-auto">
       {cropImageSrc && (
         <ImageCropperModal
           imageSrc={cropImageSrc}
@@ -92,9 +92,9 @@ export default function SuggestEditModal({ member, onClose, onSubmitSuccess }: S
           }}
         />
       )}
-      <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-3xl shadow-2xl p-6 md:p-8 w-full max-w-xl animated-scale-in my-auto max-h-[90vh] flex flex-col relative overflow-y-auto custom-scrollbar">
+      <div className="bg-white/95 dark:bg-slate-800/95 backdrop-blur-xl border border-slate-200 dark:border-slate-700/50 rounded-3xl shadow-[0_30px_60px_rgba(0,0,0,0.12)] p-6 md:p-8 w-full max-w-xl animated-scale-in my-auto max-h-[90vh] flex flex-col relative overflow-y-auto custom-scrollbar">
         <button onClick={onClose} className="absolute top-4 right-4 p-2 rounded-full bg-slate-100 dark:bg-slate-700/50 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">
-           <X className="w-5 h-5 text-slate-500 dark:text-slate-400" />
+           <X className="w-5 h-5 text-slate-400 dark:text-slate-500" />
         </button>
 
         <h2 className="text-xl font-bold text-sky-600 dark:text-sky-400 mb-2">Sugerir Correção de Dados</h2>

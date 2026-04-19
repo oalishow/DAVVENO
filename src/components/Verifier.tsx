@@ -8,6 +8,8 @@ import VerificationResult from './VerificationResult';
 import PublicRequestModal from './PublicRequestModal';
 import SuggestEditModal from './SuggestEditModal';
 
+import { motion, AnimatePresence } from 'motion/react';
+
 export default function Verifier() {
   const [isScanning, setIsScanning] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -116,15 +118,70 @@ export default function Verifier() {
 
   if (isProcessing) {
     return (
-      <div className="w-full flex flex-col items-center justify-center py-16 animated-fade-in">
+      <div className="w-full flex flex-col items-center justify-center py-16 animated-fade-in relative overflow-hidden">
         <div className="relative w-32 h-32 flex items-center justify-center">
-          <div className="absolute inset-0 border-4 border-sky-400/20 rounded-full animate-ping"></div>
-          <div className="absolute inset-4 border-4 border-sky-500/40 rounded-full animate-spin" style={{ animationDuration: '3s' }}></div>
-          <div className="absolute inset-8 border-4 border-emerald-500/30 rounded-full animate-spin" style={{ animationDuration: '2s', animationDirection: 'reverse' }}></div>
-          <ScanLine className="w-10 h-10 text-sky-600 dark:text-sky-400 animate-pulse" />
+          {/* Radar Ring 1 */}
+          <motion.div 
+            initial={{ scale: 0.5, opacity: 0 }}
+            animate={{ scale: [0.5, 1.5], opacity: [0.5, 0] }}
+            transition={{ duration: 2, repeat: Infinity, ease: "easeOut" }}
+            className="absolute inset-0 border-2 border-sky-400/30 rounded-full"
+          />
+          {/* Radar Ring 2 */}
+          <motion.div 
+            initial={{ scale: 0.5, opacity: 0 }}
+            animate={{ scale: [0.5, 1.5], opacity: [0.5, 0] }}
+            transition={{ duration: 2, repeat: Infinity, ease: "easeOut", delay: 1 }}
+            className="absolute inset-0 border-2 border-emerald-400/30 rounded-full"
+          />
+          
+          <motion.div 
+            animate={{ rotate: 360 }}
+            transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+            className="absolute inset-4 border-t-4 border-l-4 border-sky-500 rounded-full"
+          />
+          <motion.div 
+            animate={{ rotate: -360 }}
+            transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+            className="absolute inset-8 border-b-4 border-r-4 border-emerald-500 rounded-full"
+          />
+          
+          <motion.div
+            animate={{ 
+              scale: [1, 1.1, 1],
+              opacity: [0.8, 1, 0.8]
+            }}
+            transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+            className="relative"
+          >
+            <ScanLine className="w-10 h-10 text-sky-600 dark:text-sky-400" />
+            {/* Scanning Beam */}
+            <motion.div 
+              animate={{ top: ['0%', '100%', '0%'] }}
+              transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+              className="absolute left-0 w-full h-[2px] bg-sky-400 shadow-[0_0_10px_#38bdf8] z-20 opacity-70"
+            />
+          </motion.div>
         </div>
-        <p className="mt-8 text-sm font-black text-sky-600 dark:text-sky-400 uppercase tracking-widest animate-pulse">A consultar base de dados...</p>
-        <p className="text-[10px] text-slate-500 mt-2 font-mono uppercase">Verificando Assinatura Digital</p>
+        
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="text-center mt-8 relative"
+        >
+          <motion.p 
+            animate={{ opacity: [0.5, 1, 0.5] }}
+            transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+            className="text-sm font-black text-sky-600 dark:text-sky-400 uppercase tracking-widest"
+          >
+            A consultar base de dados...
+          </motion.p>
+          <p className="text-[10px] text-slate-500 mt-2 font-mono uppercase tracking-[0.2em]">Verificando Assinatura Digital</p>
+          
+          {/* Subtle glow underneath */}
+          <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 w-32 h-8 bg-sky-400/10 blur-3xl rounded-full"></div>
+        </motion.div>
       </div>
     );
   }
@@ -206,8 +263,8 @@ export default function Verifier() {
       </div>
 
       <div className="w-full max-w-md space-y-4">
-        <div className="bg-white dark:bg-slate-800/40 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/50">
-          <label className="block text-[10px] sm:text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-2 text-center">Código de Identificação ou RA</label>
+        <div className="bg-white/80 dark:bg-slate-800/40 backdrop-blur-sm p-4 rounded-2xl border border-slate-200 dark:border-slate-700/50 shadow-sm">
+          <label className="block text-[10px] sm:text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2 text-center">Código de Identificação ou RA</label>
           <div className="flex flex-col sm:flex-row gap-3">
             <input 
               type="text" 
@@ -217,7 +274,7 @@ export default function Verifier() {
               placeholder="EX: A1B2C3 OU 123456" 
               className="input-modern flex-grow rounded-xl py-2.5 px-4 text-center font-mono tracking-widest uppercase text-sm sm:text-lg" 
             />
-            <button onClick={handleVerifyManual} className="btn-modern py-2.5 px-5 rounded-xl text-white font-bold bg-slate-700 hover:bg-sky-600 flex items-center justify-center gap-2">
+            <button onClick={handleVerifyManual} className="btn-modern py-2.5 px-6 rounded-xl text-white font-bold bg-slate-800 hover:bg-sky-600 flex items-center justify-center gap-2 shadow-lg shadow-slate-800/20 dark:shadow-none transition-all">
               <Search className="w-4 h-4"/> Verificar
             </button>
           </div>

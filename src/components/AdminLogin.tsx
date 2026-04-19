@@ -20,8 +20,8 @@ export default function AdminLogin({ onLogin }: AdminLoginProps) {
   };
 
   return (
-    <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-3xl shadow-2xl p-6 sm:p-8 w-full max-w-sm mx-auto animated-scale-in">
-      <div className="w-14 h-14 sm:w-16 sm:h-16 bg-sky-50 dark:bg-slate-900 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4 border border-sky-100 dark:border-slate-700 shadow-inner">
+    <div className="bg-white/90 dark:bg-slate-800/90 backdrop-blur-xl border border-slate-200/60 dark:border-slate-700/50 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.08)] dark:shadow-2xl p-6 sm:p-8 w-full max-w-sm mx-auto animated-scale-in">
+      <div className="w-14 h-14 sm:w-16 sm:h-16 bg-sky-50/50 dark:bg-slate-900/50 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4 border border-sky-100/50 dark:border-slate-700/50 shadow-inner">
         <Lock className="w-6 h-6 sm:w-8 sm:h-8 text-sky-600 dark:text-sky-400" />
       </div>
       <h1 className="text-xl sm:text-2xl font-bold text-center text-slate-800 dark:text-white tracking-tight mb-2">Acesso Reservado</h1>

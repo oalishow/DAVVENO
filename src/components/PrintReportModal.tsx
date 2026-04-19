@@ -39,8 +39,8 @@ export default function PrintReportModal({ onClose }: PrintReportModalProps) {
   };
 
   return createPortal(
-    <div className="fixed inset-0 bg-slate-900/50 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 z-[200] overflow-y-auto print:static print:p-0 print:bg-transparent">
-      <div className="bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl p-4 sm:p-8 w-full max-w-5xl my-auto max-h-[95vh] overflow-y-auto custom-scrollbar animated-scale-in flex flex-col print:shadow-none print:border-none print:max-h-none print:overflow-visible print:w-full print:max-w-none print:p-0">
+    <div className="fixed inset-0 bg-slate-900/50 dark:bg-black/80 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 z-[200] overflow-y-auto print:static print:p-0 print:bg-white">
+      <div className="bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl p-4 sm:p-8 w-full max-w-5xl my-auto max-h-[95vh] overflow-y-auto custom-scrollbar animated-scale-in flex flex-col print:shadow-none print:border-none print:max-h-none print:overflow-visible print:w-full print:max-w-none print:p-0 print:bg-white print:text-black">
         
         <div className="flex justify-between items-center mb-6 pb-4 border-b border-slate-200 dark:border-slate-700 sticky top-0 bg-white dark:bg-slate-800 z-30 no-print">
           <div>
