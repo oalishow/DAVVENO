@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Fingerprint, User, CreditCard, QrCode, LogOut, Loader2, ShieldCheck } from 'lucide-react';
+import { Fingerprint, User, CreditCard, QrCode, LogOut, Loader2, ShieldCheck, Lock } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { collection, query, where, getDocs, limit } from 'firebase/firestore';
 import { db, appId } from '../lib/firebase';
@@ -9,6 +9,29 @@ import Modal from './Modal';
 
 const STUDENT_BOND_KEY = 'verifyId_student_identity';
 const STUDENT_BIOMETRIC_ENROLLED = 'verifyId_student_biometric';
+const STUDENT_CREDENTIAL_ID = 'verifyId_student_credential_id';
+
+// Base64Url Utilities
+function bufferToBase64url(buffer: ArrayBuffer) {
+  const bytes = new Uint8Array(buffer);
+  let str = '';
+  for (const charCode of bytes) {
+    str += String.fromCharCode(charCode);
+  }
+  const base64String = btoa(str);
+  return base64String.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+}
+
+function base64urlToBuffer(base64url: string) {
+  const padding = '='.repeat((4 - base64url.length % 4) % 4);
+  const base64 = (base64url + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray.buffer;
+}
 
 export default function StudentPortal() {
   const [bondedId, setBondedId] = useState<string | null>(localStorage.getItem(STUDENT_BOND_KEY));
@@ -33,6 +56,17 @@ export default function StudentPortal() {
     }
   }, []);
 
+  // Lock automatically when user leaves the page or hides the app
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        setIsUnlocked(false);
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
+  }, []);
+
   const loadBondedMember = async (id: string) => {
     setIsLoading(true);
     try {
@@ -45,14 +79,13 @@ export default function StudentPortal() {
       if (!snapshot.empty) {
         setMember(snapshot.docs[0].data() as Member);
         
-        // Check if biometric is enrolled
-        const enrolled = localStorage.getItem(STUDENT_BIOMETRIC_ENROLLED) === 'true';
-        if (!enrolled) {
-            // If not enrolled but bonded, we auto-unlock for now or ask (simplification)
-            setIsUnlocked(true);
+        // Auto-prompt unlocking process on load
+        if (localStorage.getItem(STUDENT_BIOMETRIC_ENROLLED) === 'true') {
+          handleBiometricUnlock();
         } else {
-            // Auto prompt biometric on load if bonded and enrolled
-            handleBiometricUnlock();
+          // If not enrolled in passkeys, we do not require biometric to display for now
+          // (or require them to register)
+          setIsUnlocked(false); // Make them click the Unlock button anyway
         }
       } else {
         setError("Identidade vinculada não encontrada.");
@@ -83,13 +116,13 @@ export default function StudentPortal() {
         setMember(data);
         setBondedId(data.alphaCode || null);
         localStorage.setItem(STUDENT_BOND_KEY, data.alphaCode || '');
+        setLinkMode(false);
         
         if (isBiometricSupported) {
            setModalBiometricOpen(true);
         } else {
-          setIsUnlocked(true);
+           setIsUnlocked(true);
         }
-        setLinkMode(false);
       } else {
         setError("Código não encontrado na base de dados.");
       }
@@ -100,22 +133,77 @@ export default function StudentPortal() {
     }
   };
 
-  const handleBiometricUnlock = async () => {
+  const enrollBiometric = async () => {
     try {
-      // Logic for device biometric check
-      // For cross-platform support without a server, we use a basic validation
-      setIsUnlocked(true);
+      const credential = await navigator.credentials.create({
+        publicKey: {
+          challenge: window.crypto.getRandomValues(new Uint8Array(32)),
+          rp: { name: "Carteirinha Estudantil", id: window.location.hostname },
+          user: { 
+            id: window.crypto.getRandomValues(new Uint8Array(16)), 
+            name: member?.ra || "Estudante", 
+            displayName: member?.name || "Estudante" 
+          },
+          pubKeyCredParams: [{type: "public-key", alg: -7}, {type: "public-key", alg: -257}],
+          authenticatorSelection: { authenticatorAttachment: "platform", userVerification: "required" },
+          timeout: 60000,
+        }
+      }) as PublicKeyCredential;
+      
+      if (credential) {
+        localStorage.setItem(STUDENT_CREDENTIAL_ID, bufferToBase64url(credential.rawId));
+        localStorage.setItem(STUDENT_BIOMETRIC_ENROLLED, 'true');
+        setIsUnlocked(true);
+        setModalBiometricOpen(false);
+      }
     } catch (err) {
-      console.error(err);
+      console.error("Biometric enrollment failed", err);
+      // Fallback: Just mark enrolled and let 'unlock' be a simple tap button
+      localStorage.setItem(STUDENT_BIOMETRIC_ENROLLED, 'true');
+      setIsUnlocked(true);
+      setModalBiometricOpen(false);
+    }
+  };
+
+  const handleBiometricUnlock = async () => {
+    const credId = localStorage.getItem(STUDENT_CREDENTIAL_ID);
+    
+    if (isBiometricSupported && credId) {
+      try {
+        const assertion = await navigator.credentials.get({
+          publicKey: {
+            challenge: window.crypto.getRandomValues(new Uint8Array(32)),
+            rpId: window.location.hostname,
+            allowCredentials: [{
+              type: "public-key",
+              id: base64urlToBuffer(credId)
+            }],
+            userVerification: "required",
+            timeout: 60000
+          }
+        });
+        if (assertion) {
+          setIsUnlocked(true);
+        }
+      } catch (err) {
+        console.error("Unlock failed", err);
+        // Error on OS authentication
+        alert("Autenticação falhou. Tente novamente.");
+      }
+    } else {
+      // Fallback if no webauthn configured
+      setIsUnlocked(true);
     }
   };
 
   const confirmUnlink = () => {
     localStorage.removeItem(STUDENT_BOND_KEY);
     localStorage.removeItem(STUDENT_BIOMETRIC_ENROLLED);
+    localStorage.removeItem(STUDENT_CREDENTIAL_ID);
     setBondedId(null);
     setMember(null);
     setIsUnlocked(false);
+    setModalUnlinkOpen(false);
   };
 
   if (isLoading) {
@@ -142,21 +230,22 @@ export default function StudentPortal() {
             Deseja remover sua identidade institucional deste dispositivo? Você precisará do código de segurança para vincular novamente.
           </Modal>
 
-          <div className="flex flex-col items-center justify-center py-12 px-6 text-center space-y-8 animate-fade-in">
-             <div className="w-20 h-20 bg-sky-100 dark:bg-sky-500/10 rounded-3xl flex items-center justify-center text-sky-600 dark:text-sky-400">
-                <Fingerprint className="w-10 h-10" />
+          <div className="flex flex-col items-center justify-center py-12 px-6 text-center space-y-8 animate-fade-in relative max-w-sm mx-auto h-full min-h-[60vh]">
+             <div className="absolute inset-0 bg-slate-900/5 backdrop-blur-[2px] rounded-3xl -z-10" />
+             <div className="w-24 h-24 bg-sky-100 dark:bg-sky-500/10 rounded-full flex items-center justify-center text-sky-600 dark:text-sky-400 shadow-inner">
+                <Lock className="w-12 h-12" />
              </div>
              <div>
-                <h2 className="text-2xl font-black text-slate-800 dark:text-white uppercase tracking-tighter">Carteirinha Bloqueada</h2>
-                <p className="text-sm text-slate-500 mt-2">Use sua biometria para visualizar seus dados de identificação.</p>
+                <h2 className="text-2xl font-black text-slate-800 dark:text-white uppercase tracking-tighter">Acesso Bloqueado</h2>
+                <p className="text-sm text-slate-500 mt-2 font-medium">Use a senha ou biometria do seu aparelho para desbloquear a sua carteirinha.</p>
              </div>
              <button 
                onClick={handleBiometricUnlock}
-               className="w-full max-w-xs py-4 bg-sky-600 hover:bg-sky-500 text-white rounded-2xl font-bold shadow-lg shadow-sky-600/20 transition-all active:scale-95 flex items-center justify-center gap-2"
+               className="w-full py-4 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-bold shadow-xl shadow-slate-900/20 transition-all active:scale-95 flex items-center justify-center gap-2"
              >
-                <Fingerprint className="w-5 h-5" /> Desbloquear
+                <Fingerprint className="w-5 h-5" /> Desbloquear Agora
              </button>
-             <button onClick={() => setModalUnlinkOpen(true)} className="text-xs text-slate-400 hover:text-rose-500 font-medium transition-colors">Remover vínculo com este dispositivo</button>
+             <button onClick={() => setModalUnlinkOpen(true)} className="text-xs text-rose-400 hover:text-rose-600 font-bold transition-colors">Desvincular Carteirinha</button>
           </div>
         </>
       );
@@ -220,15 +309,12 @@ export default function StudentPortal() {
             setIsUnlocked(true);
             setModalBiometricOpen(false);
           }} 
-          title="Ativar Biometria"
-          confirmLabel="Ativar Agora"
-          onConfirm={() => {
-            localStorage.setItem(STUDENT_BIOMETRIC_ENROLLED, 'true');
-            setIsUnlocked(true);
-          }}
+          title="Configurar Biometria"
+          confirmLabel="Ativar"
+          onConfirm={enrollBiometric}
           confirmVariant="success"
         >
-          Deseja ativar a proteção por biometria (Digital/Rosto) para acessar sua carteirinha de forma mais segura e rápida nas próximas vezes?
+          Para proteger sua identidade de acessos indevidos, recomendamos vincular a senha ou biometria (Rosto/Digital) original deste dispositivo.
         </Modal>
 
        <div className="text-center space-y-3">
@@ -237,7 +323,7 @@ export default function StudentPortal() {
           </div>
           <h2 className="text-2xl font-black text-slate-800 dark:text-white uppercase tracking-tighter">Minha Identidade</h2>
           <p className="text-xs text-slate-500 leading-relaxed px-4">
-            Vincule sua carteirinha digital a este telemóvel para acessá-la instantaneamente através da sua biometria.
+            Vincule sua carteirinha digital a este telemóvel para acessá-la instantaneamente.
           </p>
        </div>
 
@@ -264,7 +350,7 @@ export default function StudentPortal() {
             {error && <p className="text-[10px] text-rose-500 font-bold text-center uppercase tracking-tight">{error}</p>}
             <div className="flex gap-2">
                <button onClick={() => setLinkMode(false)} className="px-4 bg-slate-100 dark:bg-slate-800 text-slate-500 rounded-xl font-bold">Cancelar</button>
-               <button onClick={linkIdentity} className="flex-grow py-4 bg-emerald-600 text-white rounded-xl font-bold shadow-lg shadow-emerald-600/20">Vincular Agora</button>
+               <button onClick={linkIdentity} className="flex-grow py-4 bg-emerald-600 text-white rounded-xl font-bold shadow-lg shadow-emerald-600/20">Vincular</button>
             </div>
          </div>
        )}
@@ -274,15 +360,15 @@ export default function StudentPortal() {
           <ul className="space-y-2">
              <li className="flex gap-2 text-[10px] text-slate-500 font-medium">
                 <div className="w-4 h-4 bg-sky-100 dark:bg-sky-500/20 rounded-full flex items-center justify-center shrink-0 text-sky-600 dark:text-sky-400">1</div>
-                Vincule seu código oficial ao seu navegador.
+                Vincule seu código oficial a este navegador.
              </li>
              <li className="flex gap-2 text-[10px] text-slate-500 font-medium">
                 <div className="w-4 h-4 bg-sky-100 dark:bg-sky-500/20 rounded-full flex items-center justify-center shrink-0 text-sky-600 dark:text-sky-400">2</div>
-                Ative o bloqueio por impressão digital ou rosto.
+                Ative o bloqueio por senha ou biometria.
              </li>
              <li className="flex gap-2 text-[10px] text-slate-500 font-medium">
                 <div className="w-4 h-4 bg-sky-100 dark:bg-sky-500/20 rounded-full flex items-center justify-center shrink-0 text-sky-600 dark:text-sky-400">3</div>
-                Pronto! Basta abrir o app para exibir seu documento.
+                Pronto! A carteirinha será ocultada automaticamente ao fechar.
              </li>
           </ul>
        </div>

@@ -14,6 +14,9 @@ import PrintReportModal from './PrintReportModal';
 export default function AdminPanel({ onLogout }: { onLogout: () => void }) {
   const [name, setName] = useState('');
   const [ra, setRa] = useState('');
+  const [cpf, setCpf] = useState('');
+  const [rg, setRg] = useState('');
+  const [birthdate, setBirthdate] = useState('');
   const [validity, setValidity] = useState('');
   const [roles, setRoles] = useState<string[]>([]);
   const [course, setCourse] = useState('');
@@ -67,8 +70,8 @@ export default function AdminPanel({ onLogout }: { onLogout: () => void }) {
   }, [showList, showBin, showRequests]); // Reload stats when modals close
 
   const handleRegister = async () => {
-    if (!name || !validity) {
-      setStatus({ msg: 'Preencha o Nome e a Validade.', type: 'error' });
+    if (!name || !validity || !ra || !course || !birthdate || !rg || !cpf || roles.length === 0) {
+      setStatus({ msg: 'Preencha todos os campos obrigatórios (*).', type: 'error' });
       setTimeout(() => setStatus(null), 4000);
       return;
     }
@@ -82,6 +85,9 @@ export default function AdminPanel({ onLogout }: { onLogout: () => void }) {
       await addDoc(membersRef, {
         name: name.trim(),
         ra: ra.trim(),
+        cpf: cpf.trim(),
+        rg: rg.trim(),
+        birthdate,
         validityDate: validity,
         alphaCode,
         photoUrl: photoBase64,
@@ -93,7 +99,7 @@ export default function AdminPanel({ onLogout }: { onLogout: () => void }) {
       });
 
       setStatus({ msg: 'Identidade criada com sucesso!', type: 'success' });
-      setName(''); setRa(''); setValidity(''); setCourse(''); setRoles([]); setPhotoBase64(null);
+      setName(''); setRa(''); setCpf(''); setRg(''); setBirthdate(''); setValidity(''); setCourse(''); setRoles([]); setPhotoBase64(null);
       setTimeout(() => setStatus(null), 4000);
       loadDashboardStats();
     } catch (error) {
@@ -173,20 +179,32 @@ export default function AdminPanel({ onLogout }: { onLogout: () => void }) {
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
           <div>
-            <label className="block text-[10px] sm:text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Nome Completo</label>
+            <label className="block text-[10px] sm:text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Nome Completo *</label>
             <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Ex: João Silva" className="input-modern w-full rounded-xl py-2.5 px-3" />
           </div>
           <div>
-            <label className="block text-[10px] sm:text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">RA</label>
+            <label className="block text-[10px] sm:text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">RA / Matrícula *</label>
             <input type="text" value={ra} onChange={e => setRa(e.target.value)} placeholder="Ex: 123456" className="input-modern w-full rounded-xl py-2.5 px-3" />
           </div>
-          <div className="md:col-span-2">
-            <label className="block text-[10px] sm:text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Data de Validade</label>
+          <div>
+            <label className="block text-[10px] sm:text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">CPF *</label>
+            <input type="text" value={cpf} onChange={e => setCpf(e.target.value)} placeholder="000.000.000-00" className="input-modern w-full rounded-xl py-2.5 px-3" />
+          </div>
+          <div>
+            <label className="block text-[10px] sm:text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">RG *</label>
+            <input type="text" value={rg} onChange={e => setRg(e.target.value)} placeholder="00.000.000-0" className="input-modern w-full rounded-xl py-2.5 px-3" />
+          </div>
+          <div>
+            <label className="block text-[10px] sm:text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Data de Nascimento *</label>
+            <input type="text" value={birthdate} onChange={e => setBirthdate(e.target.value)} placeholder="DD/MM/AAAA" className="input-modern w-full rounded-xl py-2.5 px-3 text-sm" />
+          </div>
+          <div>
+            <label className="block text-[10px] sm:text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">Data de Validade *</label>
             <input type="date" value={validity} onChange={e => setValidity(e.target.value)} className="input-modern w-full rounded-xl py-2.5 px-3 uppercase text-sm" />
           </div>
           
           <div className="md:col-span-2 pt-1 border-t border-slate-200 dark:border-slate-700/50 mt-1">
-            <label className="block text-[10px] sm:text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 mt-2">Vínculo Institucional</label>
+            <label className="block text-[10px] sm:text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 mt-2">Vínculo Institucional *</label>
             <div className="flex flex-wrap gap-2">
               {availableRoles.map(role => (
                 <button
@@ -201,9 +219,9 @@ export default function AdminPanel({ onLogout }: { onLogout: () => void }) {
           </div>
 
           <div className="md:col-span-2 border-t border-slate-200 dark:border-slate-700/50 pt-3 mt-1">
-            <label className="block text-[10px] sm:text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Curso Académico</label>
+            <label className="block text-[10px] sm:text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Curso Académico *</label>
             <select value={course} onChange={e => setCourse(e.target.value)} className="input-modern w-full rounded-xl py-2.5 px-3 text-sm">
-              <option value="">Nenhum / Não aplicável</option>
+              <option value="">Selecione o Curso</option>
               <option value="FILOSOFIA">FILOSOFIA</option>
               <option value="FILOSOFIA EAD">FILOSOFIA EAD</option>
               <option value="TEOLOGIA">TEOLOGIA</option>

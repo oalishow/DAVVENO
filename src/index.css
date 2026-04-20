@@ -103,22 +103,64 @@ body {
     size: auto;
   }
 
-  /* Force light theme colors globally for print */
+  /* Exceções explícitas para manter cores no cartão durante a impressão */
+  .print-card, .print-card * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Mantém a arte e gradiente do cartão */
+  .dark .print-card *, .print-card * {
+    color: inherit !important;
+    border-color: inherit !important;
+  }
+
+  /* Impressão exata da carteirinha (Padrão CR80: 85.6mm x 54mm) */
+  #export-card-node {
+    position: static !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 15mm !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .print-card {
+    position: static !important;
+    display: block !important;
+    width: 85.6mm !important;
+    height: 54mm !important;
+    aspect-ratio: auto !important;
+    transform: none !important;
+    backface-visibility: visible !important;
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+    border: 1px solid #ccc !important;
+    border-radius: 4mm !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+    margin-bottom: 5mm !important;
+  }
+
+  /* Force light theme colors globally for print (EXCETO para o print-card) */
   html, body, #root, .dark, .dark body {
     background: white !important;
     background-color: white !important;
     color: black !important;
   }
 
-  /* Force all children of .dark to reset backgrounds and colors in print */
-  .dark * {
+  /* Force all children of .dark to reset backgrounds and colors in print (EXCETO print-card) */
+  .dark *:not(.print-card):not(.print-card *) {
     background-color: transparent !important;
     color: black !important;
     border-color: #ddd !important;
   }
 
   /* Keep specific containers as white (not transparent) for clarity */
-  .bg-white, .glass-panel, table, tr, td, th {
+  .bg-white:not(.print-card *), .glass-panel, table, tr, td, th {
     background-color: white !important;
   }
 
@@ -140,7 +182,7 @@ body {
   }
 
   /* Handle full page modals in print */
-  .fixed, .absolute {
+  .fixed:not(#export-card-node), .absolute:not(.print-card *) {
     position: static !important;
     display: block !important;
     width: 100% !important;
@@ -149,7 +191,7 @@ body {
     backdrop-filter: none !important;
   }
 
-  .glass-panel, .bg-white, .dark\:bg-slate-800 {
+  .glass-panel, .bg-white:not(.print-card *), .dark\:bg-slate-800 {
     background: white !important;
     box-shadow: none !important;
     border: none !important;

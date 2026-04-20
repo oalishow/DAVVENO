@@ -185,11 +185,17 @@ export default function MemberEditModal({ member, onClose, onUpdate }: MemberEdi
                   <input type="date" value={validity} onChange={e => setValidity(e.target.value)} className="input-modern w-full rounded-lg py-2 px-3 text-sm" />
                 </div>
               </div>
-              <div>
-                <label className="text-xs font-medium text-slate-500 mb-1 block">Curso</label>
-                <input type="text" value={course} onChange={e => setCourse(e.target.value)} className="input-modern w-full rounded-lg py-2 px-3 text-sm" />
+              <div className="pt-2 border-t border-slate-200 dark:border-slate-700/50 mt-1">
+                <label className="text-xs font-medium text-slate-500 mb-1 block">Curso Académico *</label>
+                <select value={course} onChange={e => setCourse(e.target.value)} className="input-modern w-full rounded-lg py-2 px-3 text-sm">
+                  <option value="">Selecione o Curso</option>
+                  <option value="FILOSOFIA">FILOSOFIA</option>
+                  <option value="FILOSOFIA EAD">FILOSOFIA EAD</option>
+                  <option value="TEOLOGIA">TEOLOGIA</option>
+                  <option value="TEOLOGIA EAD">TEOLOGIA EAD</option>
+                </select>
               </div>
-              <div>
+              <div className="pt-2">
                 <label className="text-xs font-medium text-slate-500 mb-1 block">Código Identificação</label>
                 <input type="text" value={member.alphaCode || ''} disabled className="input-modern w-full rounded-lg py-2 px-3 text-sm font-mono tracking-widest bg-slate-100 opacity-70" />
               </div>

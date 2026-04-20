@@ -24,7 +24,7 @@ export default function FajopaIDCard({ member, exportMode = false }: FajopaIDCar
   const avatarUrl = member.photoUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(safeName)}&background=e2e8f0&color=475569`;
 
   const frontSide = (
-    <div className={`${exportMode ? 'relative w-[600px] aspect-[1.6/1]' : 'absolute w-full h-full backface-hidden'} bg-gradient-to-br from-indigo-50 via-sky-50 to-cyan-100 overflow-hidden shadow-2xl shrink-0`} style={{ borderRadius: '16px', border: '1px solid rgba(0,0,0,0.1)' }}>
+    <div className={`${exportMode ? 'relative w-[600px] aspect-[1.586/1] shrink-0 print-card' : 'absolute w-full h-full backface-hidden print-card'} bg-gradient-to-br from-indigo-50 via-sky-50 to-cyan-100 overflow-hidden shadow-2xl shrink-0`} style={{ borderRadius: '16px', border: '1px solid rgba(0,0,0,0.1)' }}>
       {/* Top Divider / Header Decor */}
       <div className="absolute top-0 left-0 w-full h-[18%] bg-blue-950 border-b-4 border-cyan-500 flex items-center z-20 shadow-sm">
          <h1 className="text-white font-black pl-[5%] tracking-wide" style={{ fontSize: 'clamp(16px, 4vw, 26px)' }}>
@@ -108,7 +108,7 @@ export default function FajopaIDCard({ member, exportMode = false }: FajopaIDCar
   );
 
   const backSide = (
-    <div className={`${exportMode ? 'relative w-[600px] aspect-[1.6/1]' : 'absolute w-full h-full backface-hidden rotate-y-180'} bg-gradient-to-br from-indigo-50 to-sky-100 overflow-hidden shadow-2xl`} style={{ borderRadius: '16px', border: '1px solid rgba(0,0,0,0.1)' }}>
+    <div className={`${exportMode ? 'relative w-[600px] aspect-[1.586/1] shrink-0 print-card' : 'absolute w-full h-full backface-hidden rotate-y-180 print-card'} bg-gradient-to-br from-indigo-50 to-sky-100 overflow-hidden shadow-2xl`} style={{ borderRadius: '16px', border: '1px solid rgba(0,0,0,0.1)' }}>
       {/* Top left decors */}
       <div className="absolute top-0 left-0 w-[45%] h-[35%] bg-blue-950" style={{ clipPath: 'polygon(0 0, 100% 0, 30% 100%, 0 100%)' }}></div>
       <div className="absolute top-0 left-0 w-[35%] h-[25%] bg-cyan-500" style={{ clipPath: 'polygon(0 0, 100% 0, 40% 100%, 0 100%)' }}></div>
@@ -163,7 +163,7 @@ export default function FajopaIDCard({ member, exportMode = false }: FajopaIDCar
 
   if (exportMode) {
     return (
-      <div id="export-card-node" className="flex flex-col gap-8 w-[664px] items-center p-8 bg-transparent" style={{ position: 'absolute', top: '-9999px', left: '-9999px' }}>
+      <div id="export-card-node" className="flex flex-col gap-10 w-[600px] items-center p-8 bg-white" style={{ position: 'absolute', top: '2000px', left: '-9999px' }}>
         {frontSide}
         {backSide}
       </div>
@@ -171,7 +171,7 @@ export default function FajopaIDCard({ member, exportMode = false }: FajopaIDCar
   }
 
   return (
-    <div className="perspective-1000 w-full max-w-[600px] aspect-[1.6/1] mx-auto cursor-pointer focus:outline-none" onClick={() => setFlipped(!flipped)}>
+    <div className="perspective-1000 w-full max-w-[600px] aspect-[1.586/1] mx-auto cursor-pointer focus:outline-none no-print" onClick={() => setFlipped(!flipped)}>
       <div className={`relative w-full h-full transition-transform duration-700 transform-style-3d ${flipped ? 'rotate-y-180' : ''}`}>
         {frontSide}
         {backSide}
