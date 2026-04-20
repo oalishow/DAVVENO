@@ -99,23 +99,12 @@ body {
     size: auto;
   }
 
-  /* Force light theme colors globally for print */
-  html, body, #root, .dark, .dark body {
+  body {
     background: white !important;
-    background-color: white !important;
     color: black !important;
-  }
-
-  /* Force all children of .dark to reset backgrounds and colors in print */
-  .dark * {
-    background-color: transparent !important;
-    color: black !important;
-    border-color: #ddd !important;
-  }
-
-  /* Keep specific containers as white (not transparent) for clarity */
-  .bg-white, .glass-panel, table, tr, td, th {
-    background-color: white !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    overflow: visible !important;
   }
 
   .no-print {
