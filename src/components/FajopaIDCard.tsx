@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import type { Member } from '../types';
 import { QRCodeCanvas } from 'qrcode.react';
 import { URL_STORAGE_KEY, DEFAULT_PUBLIC_URL, DIRECTOR_NAME_KEY, DEFAULT_DIRECTOR_NAME } from '../lib/constants';
@@ -11,10 +11,44 @@ interface FajopaIDCardProps {
 export default function FajopaIDCard({ member, exportMode = false }: FajopaIDCardProps) {
   const [flipped, setFlipped] = useState(false);
   const [directorName, setDirectorName] = useState(DEFAULT_DIRECTOR_NAME);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(1);
   
   useEffect(() => {
     setDirectorName(localStorage.getItem(DIRECTOR_NAME_KEY) || DEFAULT_DIRECTOR_NAME);
   }, []);
+
+  useEffect(() => {
+    if (exportMode) return;
+    
+    const calculateScale = (width: number) => {
+       const isPortrait = window.innerWidth < 640 && window.innerHeight > window.innerWidth;
+       // If portrait, the card is rotated 90deg, so its visual width is 378.
+       // We scale it so it fits into the container width perfectly.
+       // Add a slight 5% margin down on portrait to ensure it doesn't touch the very edges.
+       return isPortrait ? (width * 0.95) / 378 : width / 600;
+    };
+
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        setScale(calculateScale(entry.contentRect.width));
+      }
+    });
+
+    if (containerRef.current) observer.observe(containerRef.current);
+    
+    const handleWinResize = () => {
+       if (containerRef.current) {
+          setScale(calculateScale(containerRef.current.getBoundingClientRect().width));
+       }
+    };
+    window.addEventListener('resize', handleWinResize);
+    
+    return () => {
+       observer.disconnect();
+       window.removeEventListener('resize', handleWinResize);
+    };
+  }, [exportMode]);
   
   const baseUrl = localStorage.getItem(URL_STORAGE_KEY) || DEFAULT_PUBLIC_URL;
   const cleanBaseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
@@ -29,10 +63,10 @@ export default function FajopaIDCard({ member, exportMode = false }: FajopaIDCar
   const avatarUrl = member.photoUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(safeName)}&background=e2e8f0&color=475569`;
 
   const frontSide = (
-    <div className={`${exportMode ? 'relative w-[600px] aspect-[1.586/1] shrink-0 print-card' : 'absolute w-full h-full backface-hidden print-card'} bg-gradient-to-br from-indigo-50 via-sky-50 to-cyan-100 overflow-hidden shadow-2xl shrink-0`} style={{ borderRadius: '16px', border: '1px solid rgba(0,0,0,0.1)' }}>
+    <div className={`absolute w-[600px] h-[378px] backface-hidden print-card bg-gradient-to-br from-indigo-50 via-sky-50 to-cyan-100 overflow-hidden shadow-2xl shrink-0`} style={{ borderRadius: '16px', border: '1px solid rgba(0,0,0,0.1)' }}>
       {/* Top Divider / Header Decor */}
       <div className="absolute top-0 left-0 w-full h-[18%] bg-blue-950 border-b-4 border-cyan-500 flex items-center z-20 shadow-sm">
-         <h1 className="text-white font-black pl-[5%] tracking-wide" style={{ fontSize: 'clamp(16px, 4vw, 26px)' }}>
+         <h1 className="text-white font-black pl-[5%] tracking-wide" style={{ fontSize: '24px' }}>
            IDENTIFICAÇÃO ESTUDANTIL
          </h1>
       </div>
@@ -42,15 +76,15 @@ export default function FajopaIDCard({ member, exportMode = false }: FajopaIDCar
       <div className="absolute bottom-0 left-0 w-[55%] h-[20%] bg-blue-900" style={{ clipPath: 'polygon(0 40%, 100% 100%, 0 100%)', zIndex: 1 }}></div>
 
       <div className="absolute bottom-0 left-[20%] right-[32%] h-[17%] bg-blue-900 flex items-center justify-center z-2" style={{ clipPath: 'polygon(5% 0, 100% 0, 100% 100%, 0 100%)' }}>
-         <span className="text-white font-bold tracking-widest uppercase pl-4" style={{ fontSize: 'clamp(7px, 1.6vw, 12px)' }}>
+         <span className="text-white font-bold tracking-widest uppercase pl-4" style={{ fontSize: '10px' }}>
            FACULDADE JOÃO PAULO II
          </span>
       </div>
 
       {/* Texts over left bottom */}
       <div className="absolute bottom-[4%] left-[4%] text-white z-10 flex flex-col items-center">
-        <span className="font-bold leading-none" style={{ fontSize: 'clamp(9px, 2vw, 13px)' }}>CÓD. USO:</span>
-        <span className="font-bold tracking-widest leading-none mt-1 bg-black/20 px-1 py-0.5 rounded" style={{ fontSize: 'clamp(11px, 2.5vw, 16px)' }}>
+        <span className="font-bold leading-none" style={{ fontSize: '12px' }}>CÓD. USO:</span>
+        <span className="font-bold tracking-widest leading-none mt-1 bg-black/20 px-2 py-0.5 rounded" style={{ fontSize: '16px' }}>
           {member.alphaCode}
         </span>
       </div>
@@ -65,10 +99,10 @@ export default function FajopaIDCard({ member, exportMode = false }: FajopaIDCar
           { label: 'VAL:', value: safeDate, w: '50%' },
         ].map((row, i) => (
           <div key={i} className={`flex bg-white rounded-full border-[1.5px] border-slate-400 overflow-hidden shadow-sm items-center ${row.isName ? 'h-[23%]' : 'h-[16%]'}`} style={{ width: row.w }}>
-            <span className="bg-white text-blue-900 font-bold px-2 flex items-center justify-center h-full border-r-[1.5px] border-slate-300 tracking-tight shrink-0" style={{ fontSize: 'clamp(10px, 2.2vw, 16px)' }}>
+            <span className="bg-white text-blue-900 font-bold px-2 flex items-center justify-center h-full border-r-[1.5px] border-slate-300 tracking-tight shrink-0" style={{ fontSize: '13px' }}>
               {row.label}
             </span>
-            <span className={`text-slate-800 font-bold px-2 bg-white flex-1 h-full flex items-center ${row.isName ? 'text-left justify-start whitespace-normal leading-[1.05] break-words' : 'justify-center whitespace-nowrap overflow-hidden text-ellipsis'}`} style={{ fontSize: row.isName ? 'clamp(9px, 1.8vw, 14px)' : 'clamp(10px, 2vw, 15px)' }}>
+            <span className={`text-slate-800 font-bold px-2 bg-white flex-1 h-full flex items-center ${row.isName ? 'text-left justify-start whitespace-normal leading-[1.05] break-words' : 'justify-center whitespace-nowrap overflow-hidden text-ellipsis'}`} style={{ fontSize: row.isName ? '12px' : '12px' }}>
               {row.value}
             </span>
           </div>
@@ -76,7 +110,7 @@ export default function FajopaIDCard({ member, exportMode = false }: FajopaIDCar
       </div>
 
        {/* Center Logo FAJOPA */}
-      <div className="absolute bottom-[23%] left-[32.5%] w-[33%] h-[55%] flex flex-col items-center justify-center opacity-95 z-10 pointer-events-none">
+      <div className="absolute bottom-[23%] left-[36%] w-[28%] h-[50%] flex flex-col items-center justify-center opacity-95 z-10 pointer-events-none">
          <svg viewBox="0 0 300 300" className="w-full h-full drop-shadow-[0_2px_4px_rgba(0,0,0,0.15)]">
             {/* Left Wing (Light Blue - layered feathers) */}
             <path d="M140,165 C110,165 40,140 10,70 C50,110 110,140 140,145 Z" fill="#2096d3"/>
@@ -97,7 +131,7 @@ export default function FajopaIDCard({ member, exportMode = false }: FajopaIDCar
             <path d="M265,195 L285,230 L250,217 Z" fill="#0f172a" />
 
             <path id="ribbon-curve-front" d="M35,214 Q145,194 255,214" fill="none" />
-            <text fill="white" fontFamily="Arial, Helvetica, sans-serif" fontSize="16" fontWeight="bold" textAnchor="middle" letterSpacing="1.2">
+            <text fill="white" fontFamily="Arial, Helvetica, sans-serif" fontSize="14" fontWeight="bold" textAnchor="middle" letterSpacing="1.2">
                <textPath href="#ribbon-curve-front" startOffset="50%">FIDES ET RATIO</textPath>
             </text>
 
@@ -126,27 +160,30 @@ export default function FajopaIDCard({ member, exportMode = false }: FajopaIDCar
   );
 
   const backSide = (
-    <div className={`${exportMode ? 'relative w-[600px] aspect-[1.586/1] shrink-0 print-card' : 'absolute w-full h-full backface-hidden rotate-y-180 print-card'} bg-gradient-to-br from-indigo-50 to-sky-100 overflow-hidden shadow-2xl`} style={{ borderRadius: '16px', border: '1px solid rgba(0,0,0,0.1)' }}>
+    <div className={`absolute w-[600px] h-[378px] backface-hidden ${exportMode ? '' : 'rotate-y-180'} print-card bg-gradient-to-br from-indigo-50 to-sky-100 overflow-hidden shadow-2xl shrink-0`} style={{ borderRadius: '16px', border: '1px solid rgba(0,0,0,0.1)' }}>
       {/* Top left decors */}
       <div className="absolute top-0 left-0 w-[45%] h-[35%] bg-blue-950" style={{ clipPath: 'polygon(0 0, 100% 0, 30% 100%, 0 100%)' }}></div>
       <div className="absolute top-0 left-0 w-[35%] h-[25%] bg-cyan-500" style={{ clipPath: 'polygon(0 0, 100% 0, 40% 100%, 0 100%)' }}></div>
       
-      <div className="absolute top-[8%] w-[86%] left-[7%] text-center text-blue-950 font-bold leading-tight bg-white/95 backdrop-blur-sm border-[2px] border-slate-200 shadow-md rounded-xl p-2 z-10" style={{ fontSize: 'clamp(10px, 2vw, 15px)' }}>
+      <div className="absolute top-[8%] w-[86%] left-[7%] text-center text-blue-950 font-bold leading-tight bg-white/95 backdrop-blur-sm border-[2px] border-slate-200 shadow-md rounded-xl p-2 z-10" style={{ fontSize: '13px' }}>
         Este cartão é pessoal e intransferível, sendo o usuário responsável pela utilização. Em caso de perda, avise imediatamente a secretaria da faculdade.
       </div>
 
       <div className="absolute top-[35%] w-full flex flex-col items-center z-0">
         {/* Signature Area */}
         <div className="w-[80%] max-w-[200px] h-[50px] sm:h-[60px] border-b-[2.5px] border-slate-800 flex items-end justify-center pb-2 mt-2">
-           {directorName && (
-             <span className="font-great-vibes text-slate-800 tracking-wider font-medium blur-[0.3px] opacity-80" style={{ fontSize: 'clamp(16px, 4vw, 24px)' }}>
-               {directorName}
-             </span>
-           )}
         </div>
-        <div className="text-blue-900 font-bold mt-1" style={{ fontSize: 'clamp(10px, 2.5vw, 16px)' }}>DIRETOR GERAL DA FACULDADE</div>
         
-        <div className="mt-[3%] flex items-center justify-center gap-2 opacity-90 scale-90 sm:scale-100 pb-1">
+        {directorName ? (
+           <div className="flex flex-col items-center mt-1 leading-none">
+             <div className="text-slate-800 font-bold uppercase tracking-tight text-[14px] leading-none mb-0.5">{directorName}</div>
+             <div className="text-blue-900 font-bold text-[11px] leading-none">DIRETOR GERAL DA FACULDADE</div>
+           </div>
+        ) : (
+           <div className="text-blue-900 font-bold mt-2 text-[11px]">DIRETOR GERAL DA FACULDADE</div>
+        )}
+        
+        <div className="mt-[4%] flex items-center justify-center gap-2 opacity-90 pb-1">
            <div className="w-[60px] h-[60px]">
               <svg viewBox="0 0 300 170" className="w-full h-full drop-shadow-md pb-2">
                  <defs>
@@ -175,16 +212,16 @@ export default function FajopaIDCard({ member, exportMode = false }: FajopaIDCar
            </div>
            <div className="flex flex-col text-left">
               <div className="flex items-center gap-1">
-                <span className="text-blue-900 font-black tracking-tighter" style={{ fontSize: 'clamp(22px, 4vw, 28px)', lineHeight: '1' }}>FAJOPA</span>
+                <span className="text-blue-900 font-black tracking-tighter" style={{ fontSize: '26px', lineHeight: '1' }}>FAJOPA</span>
               </div>
-              <div className="bg-blue-900 text-white rounded font-bold px-1 py-0.5 text-center mt-0.5 whitespace-nowrap shadow-sm" style={{ fontSize: 'clamp(7px, 1.2vw, 9px)' }}>
+              <div className="bg-blue-900 text-white rounded font-bold px-1 py-0.5 text-center mt-0.5 whitespace-nowrap shadow-sm" style={{ fontSize: '8px' }}>
                  FIDES ET RATIO
               </div>
-              <span className="text-blue-800 font-bold tracking-tight mt-1 leading-none" style={{ fontSize: 'clamp(8px, 1.3vw, 10px)' }}>FACULDADE JOÃO PAULO II</span>
+              <span className="text-blue-800 font-bold tracking-tight mt-1 leading-none" style={{ fontSize: '10px' }}>FACULDADE JOÃO PAULO II</span>
            </div>
         </div>
         
-        <div className="mt-[2%] w-[85%] text-center text-blue-900 font-bold leading-tight" style={{ fontSize: 'clamp(10px, 1.9vw, 14px)' }}>
+        <div className="mt-[3%] w-[85%] text-center text-blue-900 font-bold leading-tight" style={{ fontSize: '12px' }}>
           Documento padronizado nacionalmente conforme a lei 12.933/2013.<br/>Válido em todo território nacional até o findar da validade.
         </div>
       </div>
@@ -194,7 +231,7 @@ export default function FajopaIDCard({ member, exportMode = false }: FajopaIDCar
       <div className="absolute bottom-[4%] right-0 w-[15%] h-[10%] bg-cyan-500" style={{ clipPath: 'polygon(100% 0, 100% 100%, 0 100%)' }}></div>
 
       <div className="absolute bottom-0 left-[5%] right-[5%] h-[14%] bg-blue-950 flex flex-col justify-center text-center px-[2%]" style={{ clipPath: 'polygon(2% 0, 98% 0, 100% 100%, 0 100%)' }}>
-         <span className="text-white font-medium" style={{ fontSize: 'clamp(8px, 1.6vw, 12px)' }}>
+         <span className="text-white font-medium" style={{ fontSize: '10px' }}>
            Rua Bartolomeu de Gusmão, 531, São Miguel, Marília-SP, CEP 17506-280. Tel: (14) 3414-1965 - secretaria@fajopa.edu.br
          </span>
       </div>
@@ -205,18 +242,30 @@ export default function FajopaIDCard({ member, exportMode = false }: FajopaIDCar
     return (
       <div style={{ position: 'absolute', width: 0, height: 0, overflow: 'hidden' }}>
         <div id="export-card-node" className="flex flex-col gap-10 w-[600px] items-center p-8 bg-white" style={{ position: 'relative' }}>
-          {frontSide}
-          {backSide}
+          <div className="relative w-[600px] h-[378px]">
+            {frontSide}
+          </div>
+          <div className="relative w-[600px] h-[378px]">
+             {backSide}
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="perspective-1000 w-full max-w-[600px] aspect-[1.586/1] mx-auto cursor-pointer focus:outline-none no-print max-sm:portrait:rotate-90 max-sm:portrait:scale-[1.3] max-sm:portrait:my-24 sm:portrait:rotate-0 sm:portrait:scale-100 sm:portrait:my-0 transition-transform origin-center" onClick={() => setFlipped(!flipped)}>
-      <div className={`relative w-full h-full transition-transform duration-700 transform-style-3d ${flipped ? 'rotate-y-180' : ''}`}>
-        {frontSide}
-        {backSide}
+    <div 
+      ref={containerRef}
+      className="perspective-1000 w-full max-w-[600px] aspect-[1.586/1] max-sm:portrait:aspect-[1/1.586] mx-auto cursor-pointer focus:outline-none no-print transition-transform origin-center flex items-center justify-center max-sm:portrait:my-4 sm:portrait:my-0" 
+      onClick={() => setFlipped(!flipped)}
+    >
+      <div style={{ transform: `scale(${scale})`, transformOrigin: 'center center' }}>
+        <div className="w-[600px] h-[378px] transition-transform duration-500 max-sm:portrait:rotate-90 origin-center">
+           <div className={`relative w-full h-full transition-transform duration-700 transform-style-3d ${flipped ? 'rotate-y-180' : ''}`}>
+             {frontSide}
+             {backSide}
+           </div>
+        </div>
       </div>
     </div>
   );

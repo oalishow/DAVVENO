@@ -152,11 +152,15 @@ export default function VerificationResult({ member, status, onReset, isMyID = f
   return (
     <div className="w-full mt-6 animated-fade-in flex flex-col items-center">
       {isMyID && status === 'VALID' && member ? (
-         <div id="validation-card-capture" className="w-full mb-4 max-w-[600px] pointer-events-auto">
+         <div id="validation-card-capture" className="w-full mb-4 max-w-[320px] sm:max-w-[600px] pointer-events-auto @container">
             <div className="animate-success-pop flex flex-col items-center justify-center w-full">
-               <FajopaIDCard member={member} />
+               <div className="w-full aspect-[1.586/1] relative">
+                  <FajopaIDCard member={member} />
+               </div>
                {/* Hidden node specifically optimized for exporting without 3D perspective issues */}
-               <FajopaIDCard member={member} exportMode={true} />
+               <div className="absolute opacity-0 pointer-events-none -z-50 left-0 top-0">
+                  <FajopaIDCard member={member} exportMode={true} />
+               </div>
                
                <p className="text-[10px] text-slate-500 mt-5 font-semibold uppercase tracking-widest bg-emerald-100/50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-3 py-1 rounded-full"><span className="inline-block w-2 h-2 rounded-full bg-emerald-500 mr-1 animate-pulse"></span> Documento Estudantil Válido</p>
                <p className="text-[10px] text-slate-400 mt-2 font-medium">Toque no cartão para girar e ver o verso.</p>

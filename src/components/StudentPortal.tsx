@@ -184,7 +184,7 @@ export default function StudentPortal() {
       if (pinMode !== 'none') {
         const title = pinMode === 'create' ? (!pinConfirm ? 'Criar Senha/PIN (4 dígitos)' : 'Confirme a Senha') : 'Digite sua Senha/PIN';
         return (
-          <div className="flex flex-col items-center py-20 px-6 text-center space-y-6 animate-fade-in max-w-sm mx-auto h-full">
+          <div className="flex flex-col items-center py-20 px-4 text-center space-y-6 animate-fade-in max-w-[320px] sm:max-w-sm mx-auto h-full">
             <Modal
                isOpen={modalPinReset}
                onClose={() => setModalPinReset(false)}
@@ -244,7 +244,7 @@ export default function StudentPortal() {
             Deseja remover sua identidade institucional deste dispositivo? Você precisará do código de segurança para vincular novamente.
           </Modal>
 
-          <div className="flex flex-col items-center justify-center py-12 px-6 text-center space-y-8 animate-fade-in relative max-w-sm mx-auto h-full min-h-[60vh]">
+          <div className="flex flex-col items-center justify-center py-12 px-4 text-center space-y-8 animate-fade-in relative max-w-[320px] sm:max-w-sm mx-auto h-full min-h-[60vh]">
              <div className="absolute inset-0 bg-slate-900/5 backdrop-blur-[2px] rounded-3xl -z-10" />
              <div className="w-24 h-24 bg-sky-100 dark:bg-sky-500/10 rounded-full flex items-center justify-center text-sky-600 dark:text-sky-400 shadow-inner">
                 <Lock className="w-12 h-12" />
@@ -280,7 +280,7 @@ export default function StudentPortal() {
           Deseja desvincular sua carteirinha deste dispositivo? Esta ação encerrará sua sessão segura.
         </Modal>
 
-        <div className="w-full flex flex-col items-center animate-fade-in no-print mt-10">
+        <div className="w-full flex flex-col items-center animate-fade-in no-print mt-10 max-w-sm sm:max-w-[600px] mx-auto">
            <div className="w-full flex justify-between items-center mb-6 px-2">
               <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest flex items-center gap-1">
                  <ShieldCheck className="w-3 h-3" /> Acesso Seguro Ativo
@@ -314,7 +314,7 @@ export default function StudentPortal() {
   }
 
   return (
-    <div className="flex flex-col items-center py-8 space-y-8 w-full max-w-sm mx-auto">
+    <div className="flex flex-col items-center py-8 space-y-8 w-full max-w-2xl mx-auto">
        <Modal 
          isOpen={modalHelpOpen} 
          onClose={() => setModalHelpOpen(false)} 
@@ -328,7 +328,7 @@ export default function StudentPortal() {
        </Modal>
 
       {!linkMode ? (
-        <div className="flex flex-col items-center w-full space-y-4 pt-10">
+        <div className="flex flex-col items-center w-full max-w-[320px] sm:max-w-sm mx-auto space-y-4 pt-10">
           <div className="w-24 h-24 bg-indigo-50 dark:bg-indigo-500/10 rounded-full flex justify-center items-center mb-4">
              <User className="w-12 h-12 text-indigo-500" />
           </div>
@@ -359,7 +359,7 @@ export default function StudentPortal() {
           <motion.div 
             initial={{ opacity: 0, y: 10 }} 
             animate={{ opacity: 1, y: 0 }} 
-            className="w-full flex flex-col items-center bg-white dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 p-6 rounded-3xl shadow-2xl"
+            className="w-full max-w-[320px] sm:max-w-sm mx-auto flex flex-col items-center bg-white dark:bg-slate-900 border-2 border-slate-100 dark:border-slate-800 p-6 rounded-3xl shadow-2xl"
           >
             <QrCode className="w-12 h-12 text-slate-400 mb-6" />
             <h3 className="text-lg font-black uppercase tracking-tight text-slate-800 dark:text-white mb-2">Código de Uso</h3>

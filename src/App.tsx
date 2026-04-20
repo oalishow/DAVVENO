@@ -36,7 +36,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen relative flex items-center justify-center p-4 print:block print:p-0">
+    <div className="min-h-screen relative flex items-center justify-center p-0 sm:p-4 print:block print:p-0">
       <button 
         onClick={toggleTheme}
         className="absolute top-4 right-4 p-2.5 rounded-full bg-white/80 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 shadow-sm backdrop-blur-sm z-[100] transition-colors no-print"
@@ -44,7 +44,7 @@ export default function App() {
         {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
       </button>
 
-      <div className="w-full max-w-3xl glass-panel rounded-2xl sm:rounded-3xl p-5 sm:p-8 md:p-10 animated-fade-in relative overflow-hidden print:max-w-none print:p-2 print:shadow-none print:bg-white print:dark:bg-white">
+      <div className="w-full max-w-3xl glass-panel rounded-none sm:rounded-3xl p-3 sm:p-5 md:p-10 animated-fade-in relative overflow-hidden print:max-w-none print:p-2 print:shadow-none print:bg-white print:dark:bg-white min-h-[100dvh] sm:min-h-0">
         {/* Glows Decorativos de Fundo */}
         <div className="absolute -top-32 -left-32 w-64 h-64 bg-sky-300 dark:bg-sky-600 rounded-full mix-blend-multiply dark:mix-blend-screen blur-[90px] opacity-30 pointer-events-none" />
         <div className="absolute -bottom-32 -right-32 w-64 h-64 bg-emerald-300 dark:bg-emerald-600 rounded-full mix-blend-multiply dark:mix-blend-screen blur-[90px] opacity-30 pointer-events-none" />
