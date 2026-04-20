@@ -70,7 +70,7 @@ export default function AdminPanel({ onLogout }: { onLogout: () => void }) {
   }, [showList, showBin, showRequests]); // Reload stats when modals close
 
   const handleRegister = async () => {
-    if (!name || !validity || !ra || !course || !birthdate || !rg || !cpf || roles.length === 0) {
+    if (!name || !validity || !ra || !course || !birthdate || roles.length === 0) {
       setStatus({ msg: 'Preencha todos os campos obrigatórios (*).', type: 'error' });
       setTimeout(() => setStatus(null), 4000);
       return;
@@ -85,8 +85,8 @@ export default function AdminPanel({ onLogout }: { onLogout: () => void }) {
       await addDoc(membersRef, {
         name: name.trim(),
         ra: ra.trim(),
-        cpf: cpf.trim(),
-        rg: rg.trim(),
+        cpf: cpf.trim() || '',
+        rg: rg.trim() || '',
         birthdate,
         validityDate: validity,
         alphaCode,
@@ -187,11 +187,11 @@ export default function AdminPanel({ onLogout }: { onLogout: () => void }) {
             <input type="text" value={ra} onChange={e => setRa(e.target.value)} placeholder="Ex: 123456" className="input-modern w-full rounded-xl py-2.5 px-3" />
           </div>
           <div>
-            <label className="block text-[10px] sm:text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">CPF *</label>
+            <label className="block text-[10px] sm:text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">CPF</label>
             <input type="text" value={cpf} onChange={e => setCpf(e.target.value)} placeholder="000.000.000-00" className="input-modern w-full rounded-xl py-2.5 px-3" />
           </div>
           <div>
-            <label className="block text-[10px] sm:text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">RG *</label>
+            <label className="block text-[10px] sm:text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">RG</label>
             <input type="text" value={rg} onChange={e => setRg(e.target.value)} placeholder="00.000.000-0" className="input-modern w-full rounded-xl py-2.5 px-3" />
           </div>
           <div>
