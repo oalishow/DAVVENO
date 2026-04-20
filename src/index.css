@@ -101,7 +101,7 @@ body {
 /* Estilos de Impressão */
 @media print {
   @page {
-    margin: 15mm;
+    margin: 0.5cm;
     size: A4 portrait;
   }
 
@@ -177,19 +177,36 @@ body {
   /* Reset layout for print */
   #root, body, html {
     height: auto !important;
+    min-height: 0 !important;
     width: 100% !important;
     margin: 0 !important;
     padding: 0 !important;
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: center !important;
+    display: block !important;
+    background: white !important;
+  }
+
+  /* Handle App.tsx main wrapper */
+  .min-h-screen {
+    min-height: auto !important;
+    display: block !important;
+  }
+
+  /* Specific Wrapper constraints */
+  .w-full.flex.flex-col.items-center {
+    display: block !important;
+    text-align: center !important;
   }
 
   .result-card {
-    max-width: 10cm !important;
+    max-width: 12cm !important;
     margin: 0 auto !important;
     border: 1px solid #ccc !important;
     box-shadow: none !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    display: block !important;
+    text-align: left !important;
+    padding: 10px !important;
   }
 
   /* Handle full page modals in print */

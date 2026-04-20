@@ -150,7 +150,7 @@ export default function VerificationResult({ member, status, onReset, isMyID = f
   };
 
   return (
-    <div className="w-full mt-6 animated-fade-in flex flex-col items-center">
+    <div className="w-full mt-6 print:mt-1 animated-fade-in flex flex-col items-center">
       {isMyID && status === 'VALID' && member ? (
          <div id="validation-card-capture" className="w-full mb-4 max-w-[320px] sm:max-w-[600px] pointer-events-auto @container">
             <div className="animate-success-pop flex flex-col items-center justify-center w-full">
@@ -280,19 +280,19 @@ export default function VerificationResult({ member, status, onReset, isMyID = f
 
       {/* Print Footer - Hidden on screen, visible on print only */}
       {!isMyID && (
-        <div className="hidden print:flex flex-col items-center justify-center w-full mt-10 opacity-80" style={{ pageBreakInside: 'avoid' }}>
-          <div className="flex flex-col items-center justify-center w-16 h-16 bg-white border-2 border-slate-800 rounded-xl mb-3 relative overflow-hidden" style={{ borderColor: '#000' }}>
+        <div className="hidden print:block w-full mt-6 opacity-80 text-center" style={{ pageBreakInside: 'avoid', breakInside: 'avoid' }}>
+          <div className="inline-flex flex-col items-center justify-center w-16 h-16 bg-white border-2 border-slate-800 rounded-xl mb-3 relative overflow-hidden align-middle" style={{ borderColor: '#000' }}>
             <svg viewBox="0 0 100 100" className="w-[60%] h-[60%] text-black">
               <path d="M50,5 L90,20 C90,60 75,85 50,95 C25,85 10,60 10,20 L50,5 Z" fill="none" stroke="currentColor" strokeWidth="6" strokeLinejoin="round" />
               <path d="M50,32 L82,46 L50,60 L18,46 Z" fill="currentColor" />
               <path d="M30,52 L30,65 C40,75 60,75 70,65 L70,52 L50,60 Z" fill="currentColor" opacity="0.85" />
             </svg>
-            <div className="absolute bottom-0.5 font-black text-[6px] tracking-widest text-black">
+            <div className="absolute bottom-0.5 font-black text-[6px] tracking-widest text-black w-full text-center">
               VERIFY ID
             </div>
           </div>
-          <p className="text-[10px] font-medium text-slate-800 font-mono text-center max-w-[300px]" style={{ color: '#000' }}>
-            ©2025 - Alison Fernando Rodrigues dos Santos - Verify ID. Todos os direitos reservados.
+          <p className="text-[10px] font-medium text-slate-800 font-mono text-center mx-auto max-w-[300px]" style={{ color: '#000' }}>
+            ©2025 - Alison Fernando Rodrigues dos Santos<br/>Verify ID. Todos os direitos reservados.
           </p>
         </div>
       )}

@@ -41,7 +41,7 @@ export default function Header() {
   );
 
   return (
-    <div className="text-center relative">
+    <div className="text-center relative print:hidden">
       <div className="absolute top-0 right-0 py-1 px-2.5 bg-slate-100 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 text-[10px] font-bold text-slate-500 dark:text-slate-400 no-print">
         v{APP_VERSION}
       </div>
