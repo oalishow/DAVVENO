@@ -26,21 +26,29 @@ export default function MemberEditModal({ member, onClose, onUpdate }: MemberEdi
   const [isActive, setIsActive] = useState(member.isActive !== false);
   const [course, setCourse] = useState(member.course || '');
   const [roles, setRoles] = useState<string[]>(member.roles || []);
-  
+  const [newRole, setNewRole] = useState('');
+  const [customRoles, setCustomRoles] = useState<string[]>([]);
   const [photoBase64, setPhotoBase64] = useState<string | null>(null);
   const [cropImageSrc, setCropImageSrc] = useState<string | null>(null);
-  
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-
-  // Modal State
   const [modalDeleteOpen, setModalDeleteOpen] = useState(false);
-  
-  const availableRoles = ["ALUNO(A)", "PROFESSOR(A)", "COLABORADOR(A)", "SEMINARISTA", "PADRE", "DIÁCONO", "BISPO"];
   const qrRef = useRef<HTMLDivElement>(null);
+  
+  const baseRoles = ["ALUNO(A)", "PROFESSOR(A)", "COLABORADOR(A)", "SEMINARISTA", "PADRE", "DIÁCONO", "BISPO"];
+  const availableRoles = [...baseRoles, ...customRoles];
 
   const toggleRole = (role: string) => {
     setRoles(prev => prev.includes(role) ? prev.filter(r => r !== role) : [...prev, role]);
+  };
+
+  const handleAddRole = () => {
+    if (newRole.trim() && !availableRoles.includes(newRole.trim().toUpperCase())) {
+      const formatted = newRole.trim().toUpperCase();
+      setCustomRoles(prev => [...prev, formatted]);
+      setRoles(prev => [...prev, formatted]);
+      setNewRole('');
+    }
   };
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -202,12 +210,28 @@ export default function MemberEditModal({ member, onClose, onUpdate }: MemberEdi
               
               <div className="pt-2 border-t border-slate-200 dark:border-slate-700/50">
                 <label className="text-xs font-medium text-slate-500 mb-2 block">Vínculos</label>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2 mb-3">
                   {availableRoles.map(role => (
                     <button key={role} onClick={() => toggleRole(role)} className={`px-2 py-1 rounded text-[10px] font-medium border transition-all ${roles.includes(role) ? 'bg-sky-100 text-sky-700 border-sky-300' : 'bg-slate-100 text-slate-600 border-slate-300'}`}>
                       {role}
                     </button>
                   ))}
+                </div>
+                <div className="flex gap-2">
+                  <input 
+                    type="text" 
+                    value={newRole} 
+                    onChange={e => setNewRole(e.target.value)} 
+                    placeholder="Nova Tag" 
+                    className="input-modern flex-1 rounded-lg py-1.5 px-3 text-xs"
+                    onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddRole())}
+                  />
+                  <button 
+                    onClick={handleAddRole}
+                    className="px-3 py-1.5 bg-slate-800 dark:bg-slate-700 text-white rounded-lg text-xs font-bold hover:bg-slate-700 transition-colors"
+                  >
+                    Add
+                  </button>
                 </div>
               </div>
               

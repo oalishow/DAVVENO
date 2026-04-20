@@ -15,7 +15,12 @@ export default function PublicRequestModal({ onClose, onSubmitSuccess }: PublicR
   const [name, setName] = useState('');
   const [ra, setRa] = useState('');
   const [email, setEmail] = useState('');
+  const [rg, setRg] = useState('');
+  const [cpf, setCpf] = useState('');
+  const [birthdate, setBirthdate] = useState('');
   const [roles, setRoles] = useState<string[]>([]);
+  const [newRole, setNewRole] = useState('');
+  const [customRoles, setCustomRoles] = useState<string[]>([]);
   const [course, setCourse] = useState('');
   
   const [photoBase64, setPhotoBase64] = useState<string | null>(null);
@@ -26,10 +31,20 @@ export default function PublicRequestModal({ onClose, onSubmitSuccess }: PublicR
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const availableRoles = ["ALUNO(A)", "PROFESSOR(A)", "COLABORADOR(A)", "SEMINARISTA", "PADRE", "DIÁCONO", "BISPO"];
+  const baseRoles = ["ALUNO(A)", "PROFESSOR(A)", "COLABORADOR(A)", "SEMINARISTA", "PADRE", "DIÁCONO", "BISPO"];
+  const availableRoles = [...baseRoles, ...customRoles];
 
   const toggleRole = (role: string) => {
     setRoles(prev => prev.includes(role) ? prev.filter(r => r !== role) : [...prev, role]);
+  };
+
+  const handleAddRole = () => {
+    if (newRole.trim() && !availableRoles.includes(newRole.trim().toUpperCase())) {
+      const formatted = newRole.trim().toUpperCase();
+      setCustomRoles(prev => [...prev, formatted]);
+      setRoles(prev => [...prev, formatted]);
+      setNewRole('');
+    }
   };
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -41,8 +56,8 @@ export default function PublicRequestModal({ onClose, onSubmitSuccess }: PublicR
   };
 
   const handleSubmit = async () => {
-    if (!name || !email || roles.length === 0) {
-      setError('Nome, E-mail e ao menos um Vínculo são obrigatórios.');
+    if (!name || !email || !birthdate || roles.length === 0) {
+      setError('Nome, E-mail, Data de Nascimento e ao menos um Vínculo são obrigatórios.');
       return;
     }
     
@@ -59,6 +74,9 @@ export default function PublicRequestModal({ onClose, onSubmitSuccess }: PublicR
         name: name.trim(),
         ra: ra.trim(),
         email: email.trim(),
+        rg: rg.trim(),
+        cpf: cpf.trim(),
+        birthdate,
         roles,
         course,
         photoUrl: photoBase64,
@@ -115,13 +133,27 @@ export default function PublicRequestModal({ onClose, onSubmitSuccess }: PublicR
               <input type="text" value={ra} onChange={e => setRa(e.target.value)} placeholder="Se aplicável" className="input-modern w-full rounded-xl py-3 px-4 text-sm" />
           </div>
           <div>
-              <label className="block text-[10px] sm:text-xs font-semibold text-slate-500 uppercase mb-1">E-mail para Contacto</label>
+              <label className="block text-[10px] sm:text-xs font-semibold text-slate-500 uppercase mb-1">E-mail para Contacto *</label>
               <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="Para ser notificado(a) da aprovação" className="input-modern w-full rounded-xl py-3 px-4 text-sm" />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+              <div>
+                  <label className="block text-[10px] sm:text-xs font-semibold text-slate-500 uppercase mb-1">CPF</label>
+                  <input type="text" value={cpf} onChange={e => setCpf(e.target.value)} placeholder="000.000.000-00" className="input-modern w-full rounded-xl py-3 px-4 text-sm" />
+              </div>
+              <div>
+                  <label className="block text-[10px] sm:text-xs font-semibold text-slate-500 uppercase mb-1">RG</label>
+                  <input type="text" value={rg} onChange={e => setRg(e.target.value)} placeholder="00.000.000-0" className="input-modern w-full rounded-xl py-3 px-4 text-sm" />
+              </div>
+          </div>
+          <div>
+              <label className="block text-[10px] sm:text-xs font-semibold text-slate-500 uppercase mb-1">Data de Nascimento *</label>
+              <input type="text" value={birthdate} onChange={e => setBirthdate(e.target.value)} placeholder="DD/MM/AAAA" className="input-modern w-full rounded-xl py-3 px-4 text-sm" />
           </div>
           
           <div className="pt-1 border-t border-slate-200 dark:border-slate-700/50 mt-1">
-              <label className="block text-[10px] sm:text-xs font-semibold text-slate-500 uppercase mb-2 mt-2">Vínculo Institucional</label>
-              <div className="flex flex-wrap gap-2">
+              <label className="block text-[10px] sm:text-xs font-semibold text-slate-500 uppercase mb-2 mt-2">Vínculo Institucional *</label>
+              <div className="flex flex-wrap gap-2 mb-3">
                 {availableRoles.map(role => (
                   <button
                     key={role}
@@ -131,6 +163,22 @@ export default function PublicRequestModal({ onClose, onSubmitSuccess }: PublicR
                     {role}
                   </button>
                 ))}
+              </div>
+              <div className="flex gap-2">
+                <input 
+                  type="text" 
+                  value={newRole} 
+                  onChange={e => setNewRole(e.target.value)} 
+                  placeholder="Novo Vínculo" 
+                  className="input-modern flex-1 rounded-xl py-2 px-3 text-xs"
+                  onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddRole())}
+                />
+                <button 
+                  onClick={handleAddRole}
+                  className="px-4 py-2 bg-slate-800 dark:bg-slate-700 text-white rounded-xl text-xs font-bold hover:bg-slate-700 transition-colors"
+                >
+                  Add
+                </button>
               </div>
           </div>
 

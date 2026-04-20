@@ -32,13 +32,23 @@ export default function AdminPanel({ onLogout }: { onLogout: () => void }) {
   const [showRequests, setShowRequests] = useState(false);
   const [showPrintReport, setShowPrintReport] = useState(false);
 
-  // Dash Stats
   const [stats, setStats] = useState({ totalActive: 0, totalInactive: 0, totalPending: 0, totalTrash: 0 });
-
-  const availableRoles = ["ALUNO(A)", "PROFESSOR(A)", "COLABORADOR(A)", "SEMINARISTA", "PADRE", "DIÁCONO", "BISPO"];
+  const [newRole, setNewRole] = useState('');
+  const [customRoles, setCustomRoles] = useState<string[]>([]);
+  const baseRoles = ["ALUNO(A)", "PROFESSOR(A)", "COLABORADOR(A)", "SEMINARISTA", "PADRE", "DIÁCONO", "BISPO"];
+  const availableRoles = [...baseRoles, ...customRoles];
 
   const toggleRole = (role: string) => {
     setRoles(prev => prev.includes(role) ? prev.filter(r => r !== role) : [...prev, role]);
+  };
+
+  const handleAddRole = () => {
+    if (newRole.trim() && !availableRoles.includes(newRole.trim().toUpperCase())) {
+      const formatted = newRole.trim().toUpperCase();
+      setCustomRoles(prev => [...prev, formatted]);
+      setRoles(prev => [...prev, formatted]);
+      setNewRole('');
+    }
   };
 
   const loadDashboardStats = async () => {
@@ -139,36 +149,48 @@ export default function AdminPanel({ onLogout }: { onLogout: () => void }) {
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-8 no-print">
-        <div className="bg-white dark:bg-slate-800/40 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/50 flex flex-col items-center justify-center text-center shadow-sm">
-           <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-2">
+        <button 
+          onClick={() => setShowList(true)}
+          className="bg-white dark:bg-slate-800/40 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/50 flex flex-col items-center justify-center text-center shadow-sm hover:border-sky-500/50 transition-colors group"
+        >
+           <div className="w-8 h-8 rounded-full bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
              <UserCheck className="w-4 h-4" />
            </div>
-           <p className="text-2xl font-black text-slate-800 dark:text-slate-200">{stats.totalActive}</p>
+           <p className="text-2xl font-black text-slate-800 dark:text-slate-200 group-hover:text-sky-600 transition-colors">{stats.totalActive}</p>
            <p className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Ativos</p>
-        </div>
-        <div className="bg-white dark:bg-slate-800/40 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/50 flex flex-col items-center justify-center text-center shadow-sm">
-           <div className="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center mb-2 relative">
+        </button>
+        <button 
+          onClick={() => setShowRequests(true)}
+          className="bg-white dark:bg-slate-800/40 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/50 flex flex-col items-center justify-center text-center shadow-sm hover:border-sky-500/50 transition-colors group"
+        >
+           <div className="w-8 h-8 rounded-full bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center mb-2 relative group-hover:scale-110 transition-transform">
              <Clock className="w-4 h-4" />
              {stats.totalPending > 0 && <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-rose-500 rounded-full animate-ping"></span>}
              {stats.totalPending > 0 && <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-rose-500 rounded-full"></span>}
            </div>
-           <p className="text-2xl font-black text-slate-800 dark:text-slate-200">{stats.totalPending}</p>
+           <p className="text-2xl font-black text-slate-800 dark:text-slate-200 group-hover:text-sky-600 transition-colors">{stats.totalPending}</p>
            <p className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Pendentes</p>
-        </div>
-        <div className="bg-white dark:bg-slate-800/40 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/50 flex flex-col items-center justify-center text-center shadow-sm">
-           <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center mb-2">
+        </button>
+        <button 
+          onClick={() => setShowList(true)}
+          className="bg-white dark:bg-slate-800/40 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/50 flex flex-col items-center justify-center text-center shadow-sm hover:border-sky-500/50 transition-colors group"
+        >
+           <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
              <UserX className="w-4 h-4" />
            </div>
-           <p className="text-2xl font-black text-slate-800 dark:text-slate-200">{stats.totalInactive}</p>
+           <p className="text-2xl font-black text-slate-800 dark:text-slate-200 group-hover:text-sky-600 transition-colors">{stats.totalInactive}</p>
            <p className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Inativos</p>
-        </div>
-        <div className="bg-white dark:bg-slate-800/40 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/50 flex flex-col items-center justify-center text-center shadow-sm">
-           <div className="w-8 h-8 rounded-full bg-rose-100 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400 flex items-center justify-center mb-2">
+        </button>
+        <button 
+          onClick={() => setShowBin(true)}
+          className="bg-white dark:bg-slate-800/40 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/50 flex flex-col items-center justify-center text-center shadow-sm hover:border-sky-500/50 transition-colors group"
+        >
+           <div className="w-8 h-8 rounded-full bg-rose-100 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
              <Trash2 className="w-4 h-4" />
            </div>
-           <p className="text-2xl font-black text-slate-800 dark:text-slate-200">{stats.totalTrash}</p>
+           <p className="text-2xl font-black text-slate-800 dark:text-slate-200 group-hover:text-sky-600 transition-colors">{stats.totalTrash}</p>
            <p className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Na Lixeira</p>
-        </div>
+        </button>
       </div>
 
       <div className="space-y-4 sm:space-y-5 bg-white dark:bg-slate-800/40 p-4 sm:p-6 rounded-2xl border border-slate-200 dark:border-slate-700/50 no-print">
@@ -205,7 +227,7 @@ export default function AdminPanel({ onLogout }: { onLogout: () => void }) {
           
           <div className="md:col-span-2 pt-1 border-t border-slate-200 dark:border-slate-700/50 mt-1">
             <label className="block text-[10px] sm:text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 mt-2">Vínculo Institucional *</label>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2 mb-3">
               {availableRoles.map(role => (
                 <button
                   key={role}
@@ -215,6 +237,22 @@ export default function AdminPanel({ onLogout }: { onLogout: () => void }) {
                   {role}
                 </button>
               ))}
+            </div>
+            <div className="flex gap-2">
+               <input 
+                 type="text" 
+                 value={newRole} 
+                 onChange={e => setNewRole(e.target.value)} 
+                 placeholder="Nova Tag (ex: MONITOR)" 
+                 className="input-modern flex-1 rounded-xl py-2 px-3 text-xs"
+                 onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddRole())}
+               />
+               <button 
+                 onClick={handleAddRole}
+                 className="px-4 py-2 bg-slate-800 dark:bg-slate-700 text-white rounded-xl text-xs font-bold hover:bg-slate-700 transition-colors"
+               >
+                 Adicionar Tag
+               </button>
             </div>
           </div>
 
@@ -291,8 +329,14 @@ export default function AdminPanel({ onLogout }: { onLogout: () => void }) {
               <Trash2 className="w-4 h-4" /> Lixeira
             </button>
 
-            <button onClick={() => setShowRequests(true)} className={`btn-modern flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl border font-medium transition-all text-xs sm:text-sm ${stats.totalPending > 0 ? 'bg-amber-500 border-amber-600 text-slate-900 shadow-md animate-pulse-gentle' : 'border-amber-300 text-amber-700 bg-amber-50 hover:bg-amber-100 dark:bg-amber-900/20 dark:text-amber-300 dark:border-amber-500/30'}`}>
-              <Bell className="w-4 h-4" /> Solicitações
+            <button onClick={() => setShowRequests(true)} className={`btn-modern flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl border font-medium transition-all text-xs sm:text-sm relative ${stats.totalPending > 0 ? 'bg-amber-500 border-amber-600 text-slate-900 shadow-md animate-pulse-gentle' : 'border-amber-300 text-amber-700 bg-amber-50 hover:bg-amber-100 dark:bg-amber-900/20 dark:text-amber-300 dark:border-amber-500/30'}`}>
+              <Bell className="w-4 h-4" /> 
+              Solicitações
+              {stats.totalPending > 0 && (
+                <span className="absolute -top-2 -right-1 bg-rose-600 text-white text-[10px] font-black w-5 h-5 flex items-center justify-center rounded-full shadow-lg border-2 border-white dark:border-slate-800 animate-bounce">
+                  {stats.totalPending}
+                </span>
+              )}
             </button>
           </div>
         </div>
