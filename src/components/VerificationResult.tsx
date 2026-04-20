@@ -104,7 +104,7 @@ export default function VerificationResult({ member, status, onReset }: Verifica
     <div className="w-full mt-6 animated-fade-in flex flex-col items-center">
       <div 
         id="validation-card-capture"
-        className={`result-card w-full max-w-sm ${status === 'VALID' ? 'animate-success-pop' : 'animate-error-wobble'} bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-2 p-6 sm:p-8 rounded-[2rem] text-center relative overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.1)] ${
+        className={`result-card w-full max-w-sm ${status === 'VALID' ? 'animate-success-pop' : 'animate-error-wobble'} bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-2 p-6 sm:p-8 rounded-[2rem] text-center relative overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.1)] print:shadow-none print:bg-white print:text-black print:border-slate-300 ${
           status === 'VALID' ? 'border-emerald-100 dark:border-emerald-500/50 shadow-emerald-500/10' : 
           status === 'INACTIVE' ? 'border-amber-100 dark:border-amber-500/50 shadow-amber-500/10' : 
           'border-rose-100 dark:border-rose-500/50 shadow-rose-500/10'
@@ -173,8 +173,14 @@ export default function VerificationResult({ member, status, onReset }: Verifica
         </div>
 
         {member?.alphaCode && (
-          <div className="mt-4 flex justify-center bg-white p-2 rounded-xl w-fit mx-auto border-2 border-slate-200 shadow-sm">
-            <QRCodeCanvas value={`${cleanBaseUrl}?verify=${member.alphaCode}`} size={80} level="M" />
+          <div className="mt-4 flex flex-col items-center gap-2 bg-white p-3 rounded-2xl w-fit mx-auto border-2 border-slate-200 shadow-sm transition-transform hover:scale-105">
+            <QRCodeCanvas 
+              value={`${cleanBaseUrl}?verify=${member.alphaCode}`} 
+              size={120} 
+              level="H" 
+              includeMargin={true}
+            />
+            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{member.alphaCode}</span>
           </div>
         )}
       </div>

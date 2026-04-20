@@ -46,9 +46,26 @@ export default function Verifier() {
     let ht5Qrcode: Html5Qrcode | null = null;
     if (isScanning) {
       ht5Qrcode = new Html5Qrcode("reader");
+      const config = {
+        fps: 20,
+        qrbox: (viewfinderWidth: number, viewfinderHeight: number) => {
+          const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+          const boxSize = Math.floor(minEdge * 0.75);
+          return { width: boxSize, height: boxSize };
+        },
+        aspectRatio: 1.0,
+        disableFlip: false,
+        // Request higher resolution for better focus on small modules
+        videoConstraints: {
+          facingMode: "environment",
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        }
+      };
+
       ht5Qrcode.start(
         { facingMode: "environment" },
-        { fps: 10, qrbox: 250 },
+        config,
         (decodedText) => {
           ht5Qrcode?.stop().catch(console.error);
           setIsScanning(false);
@@ -118,14 +135,23 @@ export default function Verifier() {
 
   if (isProcessing) {
     return (
-      <div className="w-full flex flex-col items-center justify-center py-16 animated-fade-in">
+      <div className="w-full flex flex-col items-center justify-center py-16 animated-fade-in relative overflow-hidden">
         <div className="relative w-32 h-32 flex items-center justify-center">
+          {/* Radar Ring 1 */}
           <motion.div 
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: [0.8, 1.2, 0.8], opacity: [0, 0.4, 0] }}
-            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-            className="absolute inset-0 border-4 border-sky-400 rounded-full"
+            initial={{ scale: 0.5, opacity: 0 }}
+            animate={{ scale: [0.5, 1.5], opacity: [0.5, 0] }}
+            transition={{ duration: 2, repeat: Infinity, ease: "easeOut" }}
+            className="absolute inset-0 border-2 border-sky-400/30 rounded-full"
           />
+          {/* Radar Ring 2 */}
+          <motion.div 
+            initial={{ scale: 0.5, opacity: 0 }}
+            animate={{ scale: [0.5, 1.5], opacity: [0.5, 0] }}
+            transition={{ duration: 2, repeat: Infinity, ease: "easeOut", delay: 1 }}
+            className="absolute inset-0 border-2 border-emerald-400/30 rounded-full"
+          />
+          
           <motion.div 
             animate={{ rotate: 360 }}
             transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
@@ -136,14 +162,22 @@ export default function Verifier() {
             transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
             className="absolute inset-8 border-b-4 border-r-4 border-emerald-500 rounded-full"
           />
+          
           <motion.div
             animate={{ 
-              y: [0, -5, 0],
+              scale: [1, 1.1, 1],
               opacity: [0.8, 1, 0.8]
             }}
             transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+            className="relative"
           >
             <ScanLine className="w-10 h-10 text-sky-600 dark:text-sky-400" />
+            {/* Scanning Beam */}
+            <motion.div 
+              animate={{ top: ['0%', '100%', '0%'] }}
+              transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+              className="absolute left-0 w-full h-[2px] bg-sky-400 shadow-[0_0_10px_#38bdf8] z-20 opacity-70"
+            />
           </motion.div>
         </div>
         
@@ -151,7 +185,7 @@ export default function Verifier() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="text-center mt-8"
+          className="text-center mt-8 relative"
         >
           <motion.p 
             animate={{ opacity: [0.5, 1, 0.5] }}
@@ -160,7 +194,10 @@ export default function Verifier() {
           >
             A consultar base de dados...
           </motion.p>
-          <p className="text-[10px] text-slate-500 mt-2 font-mono uppercase">Verificando Assinatura Digital</p>
+          <p className="text-[10px] text-slate-500 mt-2 font-mono uppercase tracking-[0.2em]">Verificando Assinatura Digital</p>
+          
+          {/* Subtle glow underneath */}
+          <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 w-32 h-8 bg-sky-400/10 blur-3xl rounded-full"></div>
         </motion.div>
       </div>
     );
@@ -234,7 +271,13 @@ export default function Verifier() {
         )}
       </div>
 
-      <div id="reader" className={`w-full max-w-sm rounded-2xl overflow-hidden shadow-lg border-2 border-sky-300 dark:border-sky-500/30 ${!isScanning && 'hidden'}`}></div>
+      <div id="reader" className={`w-full max-w-sm rounded-[2rem] overflow-hidden shadow-2xl border-4 border-sky-400/50 dark:border-sky-500/30 ${!isScanning && 'hidden'}`}></div>
+      
+      {isScanning && (
+        <p className="text-[10px] text-slate-500 font-medium animate-pulse">
+          Dica: Aproxime ou afaste a câmera para focar no código.
+        </p>
+      )}
 
       <div className="relative flex items-center py-2 w-full max-w-md">
         <div className="flex-grow border-t border-slate-300 dark:border-slate-700/80"></div>
