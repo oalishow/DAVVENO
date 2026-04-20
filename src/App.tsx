@@ -15,13 +15,37 @@ export default function App() {
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
 
   useEffect(() => {
-    // Check initial theme
-    const isDark = localStorage.getItem('theme') === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches);
-    setTheme(isDark ? 'dark' : 'light');
-    if (isDark) document.documentElement.classList.add('dark');
+    // Determine initial theme
+    const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)');
+    const savedTheme = localStorage.getItem('theme');
+    
+    const applyTheme = (isDark: boolean) => {
+      setTheme(isDark ? 'dark' : 'light');
+      if (isDark) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+    };
+
+    // Initial load
+    const initialIsDark = savedTheme === 'dark' || (!savedTheme && systemPrefersDark.matches);
+    applyTheme(initialIsDark);
+
+    // Listener for system changes
+    const themeListener = (e: MediaQueryListEvent) => {
+      // Only follow system if user hasn't manually overridden it in this session or localStorage
+      if (!localStorage.getItem('theme')) {
+        applyTheme(e.matches);
+      }
+    };
+
+    systemPrefersDark.addEventListener('change', themeListener);
 
     // Liberações Iniciais (Firebase login anonimo necessário para acessar dados base)
     loginAnon();
+
+    return () => systemPrefersDark.removeEventListener('change', themeListener);
   }, []);
 
   const toggleTheme = () => {
