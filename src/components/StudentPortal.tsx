@@ -38,17 +38,9 @@ export default function StudentPortal() {
   const [member, setMember] = useState<Member | null>(null);
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [biometricsAvailable, setBiometricsAvailable] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    // Check for biometric support correctly (it returns a promise)
-    if (window.PublicKeyCredential && window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable) {
-      window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()
-        .then(result => setBiometricsAvailable(result))
-        .catch(() => setBiometricsAvailable(false));
-    }
-  }, []);
+  const isWebAuthnSupported = !!window.PublicKeyCredential;
 
   const [linkMode, setLinkMode] = useState(false);
   const [alphaCode, setAlphaCode] = useState('');
@@ -58,6 +50,11 @@ export default function StudentPortal() {
   const [modalBiometricOpen, setModalBiometricOpen] = useState(false);
   const [modalHelpOpen, setModalHelpOpen] = useState(false);
   const [modalIframeWarning, setModalIframeWarning] = useState(false);
+
+  // Fallback PIN state
+  const [pinMode, setPinMode] = useState<'create' | 'verify' | 'none'>('none');
+  const [pinInput, setPinInput] = useState('');
+  const [pinConfirm, setPinConfirm] = useState('');
 
   const isIframe = window.self !== window.top;
 
@@ -129,10 +126,11 @@ export default function StudentPortal() {
         localStorage.setItem(STUDENT_BOND_KEY, data.alphaCode || '');
         setLinkMode(false);
         
-        if (biometricsAvailable) {
+        if (isWebAuthnSupported && !isIframe) {
            setModalBiometricOpen(true);
         } else {
-           setIsUnlocked(true);
+           // Provide PIN fallback gracefully if biometrics impossible
+           setPinMode('create');
         }
       } else {
         setError("Código não encontrado na base de dados.");
@@ -141,6 +139,41 @@ export default function StudentPortal() {
       setError("Erro ao vincular identidade.");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handlePinSubmit = () => {
+    if (pinMode === 'create') {
+      if (pinInput.length === 4) {
+        if (!pinConfirm) {
+          setPinConfirm(pinInput);
+          setPinInput('');
+          setError('Confirme o PIN');
+        } else if (pinInput === pinConfirm) {
+          localStorage.setItem('student_fallback_pin', pinInput);
+          localStorage.setItem(STUDENT_BIOMETRIC_ENROLLED, 'false'); // using pin instead
+          setIsUnlocked(true);
+          setPinMode('none');
+          setError(null);
+        } else {
+          setError('Os PINs não coincidem');
+          setPinInput('');
+          setPinConfirm('');
+        }
+      } else {
+        setError('O PIN deve ter 4 dígitos');
+      }
+    } else if (pinMode === 'verify') {
+      const savedPin = localStorage.getItem('student_fallback_pin');
+      if (pinInput === savedPin) {
+        setIsUnlocked(true);
+        setPinMode('none');
+        setError(null);
+        setPinInput('');
+      } else {
+        setError('PIN Incorreto');
+        setPinInput('');
+      }
     }
   };
 
@@ -154,23 +187,24 @@ export default function StudentPortal() {
       const challenge = window.crypto.getRandomValues(new Uint8Array(32));
       const userId = window.crypto.getRandomValues(new Uint8Array(16));
 
+      // Do NOT specify rp.id, allow the browser to tie it to the effective origin automatically
       const credential = await navigator.credentials.create({
         publicKey: {
           challenge,
-          rp: { name: "Carteirinha Fajopa", id: window.location.hostname },
+          rp: { name: "Carteirinha Fajopa" },
           user: { 
             id: userId, 
-            name: member?.ra || "Estudante", 
+            name: member?.alphaCode || "estudante", 
             displayName: member?.name || "Estudante" 
           },
           pubKeyCredParams: [
             { type: "public-key", alg: -7 },   // ES256
-            { type: "public-key", alg: -257 } // RS256
+            { type: "public-key", alg: -257 }, // RS256
+            { type: "public-key", alg: -39 }   // ED25519
           ],
           authenticatorSelection: { 
-            authenticatorAttachment: "platform", 
-            userVerification: "required",
-            residentKey: "preferred"
+            userVerification: "required" // Forces device unlock (biometry or phone password)
+            // Note: authenticatorAttachment removed so it doesn't fail on devices that treat their lock differently
           },
           timeout: 60000,
         }
@@ -179,26 +213,35 @@ export default function StudentPortal() {
       if (credential) {
         localStorage.setItem(STUDENT_CREDENTIAL_ID, bufferToBase64url(credential.rawId));
         localStorage.setItem(STUDENT_BIOMETRIC_ENROLLED, 'true');
+        localStorage.removeItem('student_fallback_pin');
         setIsUnlocked(true);
         setModalBiometricOpen(false);
       }
     } catch (err: any) {
       console.error("Biometric enrollment failed", err);
       if (err.name === 'NotAllowedError' || err.name === 'SecurityError') {
-        alert("O navegador bloqueou o acesso à biometria. Se estiver num Iframe, tente abrir em nova aba.");
+        alert("Acesso negado. Tente numa nova aba ou verifique o bloqueio de tela do celular.");
       } else {
-        // Fallback or silent failure
-        localStorage.setItem(STUDENT_BIOMETRIC_ENROLLED, 'true');
-        setIsUnlocked(true);
-        setModalBiometricOpen(false);
+        alert("Biometria recusada: " + err.message + ". Redirecionando para PIN de segurança.");
       }
+      // Fallback sequence
+      setModalBiometricOpen(false);
+      setPinMode('create');
     }
   };
 
   const handleBiometricUnlock = async () => {
+    const isEnrolled = localStorage.getItem(STUDENT_BIOMETRIC_ENROLLED) === 'true';
+    const hasPin = localStorage.getItem('student_fallback_pin');
+    
+    if (!isEnrolled && hasPin) {
+      setPinMode('verify');
+      return;
+    }
+
     const credId = localStorage.getItem(STUDENT_CREDENTIAL_ID);
     
-    if (biometricsAvailable && credId) {
+    if (isWebAuthnSupported && credId) {
       if (isIframe) {
         setModalIframeWarning(true);
         return;
@@ -208,7 +251,6 @@ export default function StudentPortal() {
         const assertion = await navigator.credentials.get({
           publicKey: {
             challenge: window.crypto.getRandomValues(new Uint8Array(32)),
-            rpId: window.location.hostname,
             allowCredentials: [{
               type: "public-key",
               id: base64urlToBuffer(credId)
@@ -223,13 +265,14 @@ export default function StudentPortal() {
       } catch (err: any) {
         console.error("Unlock failed", err);
         if (err.name === 'NotAllowedError') {
-           setError("Autenticação cancelada ou bloqueada.");
+           setError("Autenticação cancelada.");
         } else {
-           setError("Falha na biometria. Tente abrir em nova aba.");
+           setError("Falha. " + err.message);
         }
+        // Fallback to PIN if any exists, though WebAuthn should handle fallback to OS PIN natively.
       }
     } else {
-      // Fallback if no webauthn configured
+      // Fallback if no webauthn configured at all
       setIsUnlocked(true);
     }
   };
@@ -238,10 +281,12 @@ export default function StudentPortal() {
     localStorage.removeItem(STUDENT_BOND_KEY);
     localStorage.removeItem(STUDENT_BIOMETRIC_ENROLLED);
     localStorage.removeItem(STUDENT_CREDENTIAL_ID);
+    localStorage.removeItem('student_fallback_pin');
     setBondedId(null);
     setMember(null);
     setIsUnlocked(false);
     setModalUnlinkOpen(false);
+    setPinMode('none');
   };
 
   if (isLoading) {
@@ -255,6 +300,33 @@ export default function StudentPortal() {
 
   if (bondedId && member) {
     if (!isUnlocked) {
+      if (pinMode !== 'none') {
+        const title = pinMode === 'create' ? (!pinConfirm ? 'Criar Senha/PIN (4 dígitos)' : 'Confirme a Senha') : 'Digite sua Senha/PIN';
+        return (
+          <div className="flex flex-col items-center py-20 px-6 text-center space-y-6 animate-fade-in max-w-sm mx-auto h-full">
+            <Lock className="w-12 h-12 text-sky-500" />
+            <h2 className="text-xl font-black text-slate-800 dark:text-white uppercase tracking-tighter">{title}</h2>
+            <input 
+              type="password"
+              inputMode="numeric"
+              maxLength={4}
+              value={pinInput}
+              onChange={(e) => setPinInput(e.target.value.replace(/\D/g, ''))}
+              className="text-center text-4xl tracking-[1em] font-black w-full py-4 rounded-xl bg-slate-100 dark:bg-slate-800 border-none outline-none text-slate-900 dark:text-white placeholder-slate-300 ml-[0.5em]"
+              placeholder="••••"
+            />
+            {error && <p className="text-xs text-rose-500 font-bold uppercase">{error}</p>}
+            <button 
+              onClick={handlePinSubmit}
+              className="w-full py-4 bg-sky-600 hover:bg-sky-500 text-white rounded-2xl font-bold shadow-xl shadow-sky-600/20 transition-all active:scale-95"
+            >
+              Confirmar
+            </button>
+            <button onClick={() => { setPinMode('none'); setModalUnlinkOpen(true); }} className="text-xs text-slate-400 hover:text-rose-600 font-bold mt-4">Cancelar e Remover Conta</button>
+          </div>
+        );
+      }
+
       return (
         <>
           <Modal 
@@ -282,7 +354,7 @@ export default function StudentPortal() {
                className="w-full py-4 bg-slate-900 hover:bg-slate-800 text-white rounded-2xl font-bold shadow-xl shadow-slate-900/20 transition-all active:scale-95 flex items-center justify-center gap-2"
              >
                 <Fingerprint className="w-5 h-5" /> 
-                {biometricsAvailable ? 'Usar Biometria / Senha' : 'Desbloquear'}
+                {localStorage.getItem('student_fallback_pin') ? 'Usar PIN Criado' : (isWebAuthnSupported ? 'Usar Biometria / Senha do Celular' : 'Desbloquear')}
              </button>
              {error && <p className="text-[10px] text-rose-500 font-bold uppercase">{error}</p>}
              <button onClick={() => setModalUnlinkOpen(true)} className="text-xs text-rose-400 hover:text-rose-600 font-bold transition-colors">Desvincular Carteirinha</button>
