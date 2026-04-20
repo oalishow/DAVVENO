@@ -101,8 +101,8 @@ body {
 /* Estilos de Impressão */
 @media print {
   @page {
-    margin: 1.5cm;
-    size: auto;
+    margin: 15mm;
+    size: A4 portrait;
   }
 
   /* Exceções explícitas para manter cores no cartão durante a impressão */
@@ -180,7 +180,16 @@ body {
     width: 100% !important;
     margin: 0 !important;
     padding: 0 !important;
-    display: block !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+  }
+
+  .result-card {
+    max-width: 10cm !important;
+    margin: 0 auto !important;
+    border: 1px solid #ccc !important;
+    box-shadow: none !important;
   }
 
   /* Handle full page modals in print */
