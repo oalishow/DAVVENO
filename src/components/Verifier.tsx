@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { Camera, XCircle, Search, ScanLine } from 'lucide-react';
-import { Html5Qrcode } from 'html5-qrcode';
 import { collection, query, getDocs } from 'firebase/firestore';
 import { db, appId } from '../lib/firebase';
 import type { Member } from '../types';
@@ -43,45 +42,50 @@ export default function Verifier() {
   };
 
   useEffect(() => {
-    let ht5Qrcode: Html5Qrcode | null = null;
+    let isActive = true;
+    // We use any here since we avoid importing the type explicitly to save bundle size, but any works
+    let ht5Qrcode: any = null;
     if (isScanning) {
-      ht5Qrcode = new Html5Qrcode("reader");
-      const config = {
-        fps: 20,
-        qrbox: (viewfinderWidth: number, viewfinderHeight: number) => {
-          const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
-          const boxSize = Math.floor(minEdge * 0.75);
-          return { width: boxSize, height: boxSize };
-        },
-        aspectRatio: 1.0,
-        disableFlip: false,
-        // Request higher resolution for better focus on small modules
-        videoConstraints: {
-          facingMode: "environment",
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
-        }
-      };
+        import('html5-qrcode').then(({ Html5Qrcode }) => {
+            if (!isActive) return;
+            ht5Qrcode = new Html5Qrcode("reader");
+            const config = {
+                fps: 20,
+                qrbox: (viewfinderWidth: number, viewfinderHeight: number) => {
+                  const minEdge = Math.min(viewfinderWidth, viewfinderHeight);
+                  const boxSize = Math.floor(minEdge * 0.75);
+                  return { width: boxSize, height: boxSize };
+                },
+                aspectRatio: 1.0,
+                disableFlip: false,
+                videoConstraints: {
+                  facingMode: "environment",
+                  width: { ideal: 1280 },
+                  height: { ideal: 720 }
+                }
+              };
 
-      ht5Qrcode.start(
-        { facingMode: "environment" },
-        config,
-        (decodedText) => {
-          ht5Qrcode?.stop().catch(console.error);
-          setIsScanning(false);
-          
-          let memberId = decodedText;
-          try {
-              const url = new URL(decodedText);
-              memberId = url.searchParams.get('verify') || decodedText;
-          } catch (_) {}
-
-          runVerification(memberId, false);
-        },
-        () => {}
-      ).catch(console.error);
+            ht5Qrcode.start(
+                { facingMode: "environment" },
+                config,
+                (decodedText: string) => {
+                  ht5Qrcode?.stop().catch(console.error);
+                  setIsScanning(false);
+                  
+                  let memberId = decodedText;
+                  try {
+                      const url = new URL(decodedText);
+                      memberId = url.searchParams.get('verify') || decodedText;
+                  } catch (_) {}
+        
+                  runVerification(memberId, false);
+                },
+                () => {}
+            ).catch(console.error);
+        });
     }
     return () => {
+      isActive = false;
       if (ht5Qrcode && ht5Qrcode.isScanning) {
         ht5Qrcode.stop().catch(console.error);
       }

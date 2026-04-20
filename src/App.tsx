@@ -1,12 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import Header from './components/Header';
-import Verifier from './components/Verifier';
-import Admin from './components/Admin';
-import StudentPortal from './components/StudentPortal';
 import Footer from './components/Footer';
-import { Moon, Sun, Shield, User, Lock } from 'lucide-react';
+import { Moon, Sun, Shield, User, Lock, Loader2 } from 'lucide-react';
 import { loginAnon } from './lib/firebase';
 import { motion, AnimatePresence } from 'motion/react';
+
+const Verifier = lazy(() => import('./components/Verifier'));
+const Admin = lazy(() => import('./components/Admin'));
+const StudentPortal = lazy(() => import('./components/StudentPortal'));
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<'verifier' | 'admin' | 'student'>('verifier');
@@ -82,9 +83,11 @@ export default function App() {
               exit={{ opacity: 0, x: activeTab === 'student' ? 20 : activeTab === 'admin' ? -20 : 0 }}
               transition={{ duration: 0.2 }}
             >
-              {activeTab === 'verifier' && <Verifier />}
-              {activeTab === 'admin' && <Admin />}
-              {activeTab === 'student' && <StudentPortal />}
+              <Suspense fallback={<div className="flex justify-center p-10"><Loader2 className="animate-spin text-sky-500 w-8 h-8" /></div>}>
+                {activeTab === 'verifier' && <Verifier />}
+                {activeTab === 'admin' && <Admin />}
+                {activeTab === 'student' && <StudentPortal />}
+              </Suspense>
             </motion.div>
           </AnimatePresence>
           
