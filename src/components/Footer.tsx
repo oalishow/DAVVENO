@@ -7,7 +7,7 @@ export default function Footer() {
   const [showChangelog, setShowChangelog] = useState(false);
 
   return (
-    <footer className="text-center text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 mt-8 sm:mt-12 pt-6 sm:pt-8 border-t border-slate-300 dark:border-slate-700/60 space-y-4 animated-fade-in no-print">
+    <footer className="text-center text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 mt-8 sm:mt-12 pt-6 sm:pt-8 border-t border-slate-300 dark:border-slate-700/60 space-y-4 animated-fade-in no-print print:hidden">
       <div className="bg-white/80 dark:bg-slate-900/50 p-3 sm:p-4 rounded-xl border border-slate-200 dark:border-slate-800 inline-block text-left w-full max-w-2xl mx-auto shadow-sm dark:shadow-inner">
         <p className="leading-relaxed">
           Trabalho de Conclusão de Curso do aluno{' '}

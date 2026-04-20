@@ -251,7 +251,7 @@ export default function VerificationResult({ member, status, onReset, isMyID = f
       </div>
       )}
 
-      <div className="flex flex-col sm:flex-row gap-3 mt-5 w-full max-w-sm no-print">
+      <div className="flex flex-col sm:flex-row gap-3 mt-5 w-full max-w-sm no-print print:hidden">
         <Modal 
           isOpen={modalResetOpen} 
           onClose={() => setModalResetOpen(false)} 

@@ -166,10 +166,6 @@ body {
     background-color: white !important;
   }
 
-  .no-print {
-    display: none !important;
-  }
-
   .print-only {
     display: block !important;
   }
@@ -210,7 +206,8 @@ body {
   }
 
   /* Handle full page modals in print */
-  .fixed:not(#export-card-node), .absolute:not(.print-card *) {
+  .fixed:not(#export-card-node):not(.no-print):not(.print\:hidden), 
+  .absolute:not(.print-card *):not(.no-print):not(.print\:hidden) {
     position: static !important;
     display: block !important;
     width: 100% !important;
@@ -247,5 +244,9 @@ body {
 
   thead {
     display: table-header-group !important;
+  }
+
+  .no-print, .print\:hidden {
+    display: none !important;
   }
 }

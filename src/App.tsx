@@ -39,7 +39,7 @@ export default function App() {
     <div className="min-h-screen relative flex items-center justify-center p-0 sm:p-4 print:block print:p-0">
       <button 
         onClick={toggleTheme}
-        className="absolute top-4 right-4 p-2.5 rounded-full bg-white/80 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 shadow-sm backdrop-blur-sm z-[100] transition-colors no-print"
+        className="absolute top-4 right-4 p-2.5 rounded-full bg-white/80 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 shadow-sm backdrop-blur-sm z-[100] transition-colors no-print print:hidden"
       >
         {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
       </button>
@@ -52,7 +52,7 @@ export default function App() {
         <div className="relative z-10 space-y-6 sm:space-y-8 print:space-y-4">
           <Header />
 
-          <div className="grid grid-cols-3 bg-slate-200/50 dark:bg-slate-900/60 rounded-xl p-1 shadow-inner border border-slate-200/50 dark:border-slate-700/50 no-print gap-1">
+          <div className="grid grid-cols-3 bg-slate-200/50 dark:bg-slate-900/60 rounded-xl p-1 shadow-inner border border-slate-200/50 dark:border-slate-700/50 no-print print:hidden gap-1">
             <button 
               onClick={() => setActiveTab('student')}
               className={`flex flex-col items-center justify-center py-2 text-[10px] font-black uppercase tracking-tighter rounded-lg transition-all duration-300 ${activeTab === 'student' ? 'bg-white dark:bg-sky-600 text-sky-600 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
