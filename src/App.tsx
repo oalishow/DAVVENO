@@ -4,6 +4,7 @@ import Footer from './components/Footer';
 import { Moon, Sun, Shield, User, Lock, Loader2 } from 'lucide-react';
 import { loginAnon } from './lib/firebase';
 import { motion, AnimatePresence } from 'motion/react';
+import ErrorBoundary from './components/ErrorBoundary';
 
 const Verifier = lazy(() => import('./components/Verifier'));
 const Admin = lazy(() => import('./components/Admin'));
@@ -83,11 +84,13 @@ export default function App() {
               exit={{ opacity: 0, x: activeTab === 'student' ? 20 : activeTab === 'admin' ? -20 : 0 }}
               transition={{ duration: 0.2 }}
             >
-              <Suspense fallback={<div className="flex justify-center p-10"><Loader2 className="animate-spin text-sky-500 w-8 h-8" /></div>}>
-                {activeTab === 'verifier' && <Verifier />}
-                {activeTab === 'admin' && <Admin />}
-                {activeTab === 'student' && <StudentPortal />}
-              </Suspense>
+              <ErrorBoundary>
+                <Suspense fallback={<div className="flex justify-center p-10"><Loader2 className="animate-spin text-sky-500 w-8 h-8" /></div>}>
+                  {activeTab === 'verifier' && <Verifier />}
+                  {activeTab === 'admin' && <Admin />}
+                  {activeTab === 'student' && <StudentPortal />}
+                </Suspense>
+              </ErrorBoundary>
             </motion.div>
           </AnimatePresence>
           
