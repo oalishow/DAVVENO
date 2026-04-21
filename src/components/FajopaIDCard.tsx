@@ -33,7 +33,8 @@ export default function FajopaIDCard({ member, exportMode = false, settings: pro
   const [flipped, setFlipped] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
-  const processedAt = member.createdAt ? new Date(member.createdAt).toLocaleString('pt-BR') : 'N/D';
+  const emittedAt = member.createdAt ? new Date(member.createdAt).toLocaleDateString('pt-BR') : 'N/D';
+  const generatedAt = new Date().toLocaleString('pt-BR');
 
   const {
     directorName,
@@ -137,8 +138,15 @@ export default function FajopaIDCard({ member, exportMode = false, settings: pro
           clipPath: 'polygon(5% 0, 100% 0, 100% 100%, 0 100%)' 
         }}
       >
-         <span className="text-white font-bold tracking-widest uppercase pl-4" style={{ fontSize: '10px' }}>
-           {instName === 'FAJOPA' ? 'FACULDADE JOÃO PAULO II' : instName}
+         <span className="text-white font-bold tracking-widest uppercase pl-4 flex items-center gap-1.5" style={{ fontSize: '10px' }}>
+           {(!instName || instName === 'Vero ID' || instName === 'A vero ID') && (
+              <svg viewBox="0 0 100 100" className="w-[12px] h-[12px] text-white shrink-0">
+                <path d="M50,5 L90,20 C90,60 75,85 50,95 C25,85 10,60 10,20 L50,5 Z" fill="none" stroke="currentColor" strokeWidth="6" strokeLinejoin="round" />
+                <path d="M50,32 L82,46 L50,60 L18,46 Z" fill="currentColor" />
+                <path d="M30,52 L30,65 C40,75 60,75 70,65 L70,52 L50,60 Z" fill="currentColor" opacity="0.85" />
+              </svg>
+           )}
+           {instName === 'FAJOPA' ? 'FACULDADE JOÃO PAULO II' : (instName === 'Vero ID' ? 'A vero ID' : instName)}
          </span>
       </div>
 
@@ -157,7 +165,7 @@ export default function FajopaIDCard({ member, exportMode = false, settings: pro
           { id: 'ra', label: 'R.A.:', value: safeRA, w: '50%' },
           { id: 'course', label: 'CURSO:', value: safeCourse, w: '50%' },
           { id: 'birth', label: 'NASC:', value: safeBirth, w: '50%' },
-          { id: 'validity', label: 'VAL:', value: safeDate, w: '50%' },
+          {id: 'validity', label: 'VAL:', value: safeDate, w: '50%'},
         ].filter(r => visibleFields[r.id]).map((row, i) => (
           <div key={i} className={`flex bg-white rounded-full border-[1.5px] border-slate-400 overflow-hidden shadow-sm items-center ${row.isName ? 'h-[23%]' : 'h-[16%]'}`} style={{ width: row.w }}>
             <span className="bg-white text-blue-900 font-bold px-2 flex items-center justify-center h-full border-r-[1.5px] border-slate-300 tracking-tight shrink-0" style={{ fontSize: '13px' }}>
@@ -349,7 +357,7 @@ export default function FajopaIDCard({ member, exportMode = false, settings: pro
              </div>
              <div className="flex flex-col text-left">
                 <div className="flex items-center gap-1">
-                  <span className="text-blue-900 font-black tracking-tighter" style={{ fontSize: '26px', lineHeight: '1' }}>{cardBackText || instName}</span>
+                  <span className="text-blue-900 font-black tracking-tighter" style={{ fontSize: '26px', lineHeight: '1' }}>{cardBackText || (instName === 'Vero ID' ? 'A vero ID' : instName)}</span>
                 </div>
                 {instName === 'FAJOPA' && (
                   <div className="bg-blue-900 text-white rounded font-bold px-1 py-0.5 text-center mt-0.5 whitespace-nowrap shadow-sm" style={{ fontSize: '8px' }}>
@@ -368,9 +376,9 @@ export default function FajopaIDCard({ member, exportMode = false, settings: pro
         </div>
       </div>
 
-      <div className="absolute top-[2%] right-[4%] opacity-50 text-[6.5px] text-right font-bold text-blue-950 pointer-events-none leading-tight select-none">
-         ©2025 - Alison Fernando Rodrigues dos Santos - {cardFrontText || 'Vero ID'}<br/>
-         Processado em: {processedAt}
+      <div className="absolute top-[2%] right-[4%] opacity-80 text-[8px] text-right font-bold text-blue-950 pointer-events-none leading-relaxed select-none">
+         ©2025 - Alison Fernando Rodrigues dos Santos - {cardFrontText || 'A vero ID'}<br/>
+         Emitido em: {emittedAt} • Gerado digitalmente: {generatedAt}
       </div>
 
       {/* Bottom Footer decors */}

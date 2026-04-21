@@ -8,8 +8,8 @@ export default function DynamicPWA() {
   useEffect(() => {
     if (!settings) return;
 
-    const appName = `${settings.instName || 'Vero ID'} v${APP_VERSION}`;
-    const shortName = settings.instName || 'Vero ID';
+    const appName = `${settings.instName || 'A vero ID'} v${APP_VERSION}`;
+    const shortName = settings.instName || 'A vero ID';
 
     // 1. Atualizar Título da Página
     document.title = appName;

@@ -342,7 +342,7 @@ export default function StudentPortal() {
           <div className="pt-8 w-full flex flex-col gap-3">
              <button
                onClick={() => setLinkMode(true)}
-               className="w-full btn-modern py-4 rounded-xl text-white font-bold tracking-wide shadow-lg flex items-center justify-center gap-3 active:scale-95"
+               className="w-full btn-modern py-4 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold tracking-wide shadow-lg flex items-center justify-center gap-3 active:scale-95"
              >
                <CreditCard className="w-5 h-5" /> Vincular Identidade
              </button>
