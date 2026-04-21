@@ -18,7 +18,8 @@ import {
   CARD_BACK_TEXT_KEY,
   CARD_VISIBLE_FIELDS_KEY,
   CARD_BACK_IMAGE_KEY,
-  CARD_DESCRIPTION_KEY
+  CARD_DESCRIPTION_KEY,
+  CARD_SIGNATURE_CONFIG_KEY
 } from '../lib/constants';
 
 interface FajopaIDCardProps {
@@ -31,10 +32,12 @@ interface FajopaIDCardProps {
     cardBackLogo?: string | null;
     cardFrontText?: string;
     cardBackText?: string;
+    url?: string;
     frontLogoConfig?: { x: number; y: number; scale: number };
     backLogoConfig?: { x: number; y: number; scale: number };
     cardBackImage?: string | null;
     cardDescription?: string;
+    signatureScale?: number;
     instSignature?: string | null;
     instName?: string;
     instColor?: string;
@@ -48,6 +51,7 @@ export default function FajopaIDCard({ member, exportMode = false, settings }: F
   const [localInstLogo, setLocalInstLogo] = useState<string | null>(null);
   const [localCardLogo, setLocalCardLogo] = useState<string | null>(null);
   const [localCardBackLogo, setLocalCardBackLogo] = useState<string | null>(null);
+  const [localUrl, setLocalUrl] = useState(DEFAULT_PUBLIC_URL);
   
   const [localCardFrontText, setLocalCardFrontText] = useState('');
   const [localCardBackText, setLocalCardBackText] = useState('');
@@ -56,6 +60,7 @@ export default function FajopaIDCard({ member, exportMode = false, settings }: F
 
   const [localCardBackImage, setLocalCardBackImage] = useState<string | null>(null);
   const [localCardDescription, setLocalCardDescription] = useState('');
+  const [localSignatureScale, setLocalSignatureScale] = useState(100);
   const [localInstSignature, setLocalInstSignature] = useState<string | null>(null);
   const [localInstName, setLocalInstName] = useState('FAJOPA');
   const [localInstColor, setLocalInstColor] = useState('#0ea5e9');
@@ -85,6 +90,7 @@ export default function FajopaIDCard({ member, exportMode = false, settings }: F
     
     setLocalCardFrontText(localStorage.getItem(CARD_FRONT_TEXT_KEY) || '');
     setLocalCardBackText(localStorage.getItem(CARD_BACK_TEXT_KEY) || '');
+    setLocalUrl(localStorage.getItem(URL_STORAGE_KEY) || DEFAULT_PUBLIC_URL);
 
     try {
       const fConfig = JSON.parse(localStorage.getItem(CARD_FRONT_LOGO_CONFIG_KEY) || 'null');
@@ -95,6 +101,7 @@ export default function FajopaIDCard({ member, exportMode = false, settings }: F
 
     setLocalCardBackImage(localStorage.getItem(CARD_BACK_IMAGE_KEY));
     setLocalCardDescription(localStorage.getItem(CARD_DESCRIPTION_KEY) || '');
+    setLocalSignatureScale(Number(localStorage.getItem(CARD_SIGNATURE_CONFIG_KEY) || '100'));
     setLocalInstSignature(localStorage.getItem(DIRECTOR_SIGNATURE_KEY));
     setLocalInstName(localStorage.getItem(INSTITUTION_NAME_KEY) || 'FAJOPA');
     setLocalInstColor(localStorage.getItem(INSTITUTION_COLOR_KEY) || '#0ea5e9');
@@ -112,15 +119,18 @@ export default function FajopaIDCard({ member, exportMode = false, settings }: F
   const cardBackLogo = settings?.cardBackLogo ?? localCardBackLogo;
   const cardFrontText = settings?.cardFrontText ?? localCardFrontText;
   const cardBackText = settings?.cardBackText ?? localCardBackText;
+  const baseUrl = settings?.url ?? localUrl;
   const frontLogoConfig = settings?.frontLogoConfig ?? localFrontLogoConfig;
   const backLogoConfig = settings?.backLogoConfig ?? localBackLogoConfig;
   const cardBackImage = settings?.cardBackImage ?? localCardBackImage;
   const cardDescription = settings?.cardDescription ?? localCardDescription;
+  const signatureScale = settings?.signatureScale ?? localSignatureScale;
   const instSignature = settings?.instSignature ?? localInstSignature;
   const instName = settings?.instName ?? localInstName;
   const instColor = settings?.instColor ?? localInstColor;
   const visibleFields = settings?.visibleFields ?? localVisibleFields;
 
+  const cleanBaseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
   const displayLogoFront = cardLogo || instLogo;
   const displayLogoBack = cardBackLogo || cardLogo || instLogo;
   const displayDescription = cardDescription || 'Documento padronizado nacionalmente conforme a lei 12.933/2013.\nVálido em todo território nacional até o findar da validade.';
@@ -157,8 +167,6 @@ export default function FajopaIDCard({ member, exportMode = false, settings }: F
     };
   }, [exportMode]);
   
-  const baseUrl = localStorage.getItem(URL_STORAGE_KEY) || DEFAULT_PUBLIC_URL;
-  const cleanBaseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
   const verificationUrl = `${cleanBaseUrl}?verify=${member.alphaCode}`;
 
   const safeName = member.name?.toUpperCase() || 'N/D';
@@ -345,7 +353,15 @@ export default function FajopaIDCard({ member, exportMode = false, settings }: F
         {visibleFields.signature && (
           <div className="w-[80%] max-w-[200px] h-[50px] sm:h-[60px] border-b-[2.5px] border-slate-800 flex items-center justify-center pb-2 mt-2">
              {instSignature && (
-               <img src={instSignature} alt="Assinatura Diretor" className="h-[120%] w-auto object-contain mb-[-10%]" />
+               <img 
+                 src={instSignature} 
+                 alt="Assinatura Diretor" 
+                 className="w-auto object-contain" 
+                 style={{ 
+                   height: `${(signatureScale / 100) * 120}%`,
+                   marginBottom: `-${(signatureScale / 100) * 10}%` 
+                 }} 
+               />
              )}
           </div>
         )}
@@ -416,7 +432,9 @@ export default function FajopaIDCard({ member, exportMode = false, settings }: F
                      FIDES ET RATIO
                   </div>
                 )}
-                <span className="text-blue-800 font-bold tracking-tight mt-1 leading-none" style={{ fontSize: '10px' }}>{cardBackText || (instName === 'FAJOPA' ? 'FACULDADE JOÃO PAULO II' : instName)}</span>
+                <span className="text-blue-800 font-bold tracking-tight mt-1 leading-none" style={{ fontSize: '9px' }}>
+                  {baseUrl.replace('https://', '').replace('http://', '')}
+                </span>
              </div>
           </div>
         )}
