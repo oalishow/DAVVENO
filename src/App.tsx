@@ -6,6 +6,7 @@ import { loginAnon } from './lib/firebase';
 import { motion, AnimatePresence } from 'motion/react';
 import ErrorBoundary from './components/ErrorBoundary';
 import DynamicPWA from './components/DynamicPWA';
+import { useSettings } from './context/SettingsContext';
 import { APP_VERSION, CHANGELOG } from './lib/constants';
 
 const Verifier = lazy(() => import('./components/Verifier'));
@@ -13,9 +14,18 @@ const Admin = lazy(() => import('./components/Admin'));
 const StudentPortal = lazy(() => import('./components/StudentPortal'));
 
 export default function App() {
+  const { settings } = useSettings();
   const [activeTab, setActiveTab] = useState<'verifier' | 'admin' | 'student'>('verifier');
   const [targetVerifyCode, setTargetVerifyCode] = useState<string | null>(null);
   const [showUpdateModal, setShowUpdateModal] = useState(false);
+
+  useEffect(() => {
+    // Monitorar atualizações via nuvem
+    if (settings?.version && settings.version !== APP_VERSION) {
+      // Se a versão na nuvem for diferente da local ou se houver um update disponível no Cache
+      setShowUpdateModal(true);
+    }
+  }, [settings?.version]);
 
   const handleGlobalVerify = (code: string) => {
     setTargetVerifyCode(code);

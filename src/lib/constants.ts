@@ -24,7 +24,7 @@ export const INSTITUTION_DESCRIPTION_KEY = 'veroId_institution_description';
 export const CARD_DESCRIPTION_KEY = 'veroId_card_description';
 export const CUSTOM_ROLES_KEY = 'verifyId_custom_roles';
 export const CUSTOM_COURSES_KEY = 'verifyId_custom_courses';
-export const APP_VERSION = '3.1.6';
+export const APP_VERSION = '3.1.7';
 export const SETTINGS_DOC_PATH = (appId: string) => `artifacts/${appId}/public/data/students/_settings_global`;
 export const ASSETS_DOC_PATH = (appId: string, assetType: string) => `artifacts/${appId}/public/data/students/_asset_${assetType}`;
 export const CHANGELOG = [

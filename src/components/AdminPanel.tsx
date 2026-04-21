@@ -4,6 +4,7 @@ import { doc, updateDoc, collection, addDoc, query, getDocs } from 'firebase/fir
 import { db, appId } from '../lib/firebase';
 import type { Member } from '../types';
 import { useSettings } from '../context/SettingsContext';
+import { APP_VERSION } from '../lib/constants';
 import MemberList from './MemberList';
 import SettingsModal from './SettingsModal';
 import RecycleBinModal from './RecycleBinModal';
@@ -95,8 +96,12 @@ export default function AdminPanel({ onLogout }: { onLogout: () => void }) {
   };
 
   useEffect(() => {
+    // Sincronizar versão do código com a nuvem automaticamente (Admin só)
+    if (settings.version !== APP_VERSION) {
+      updateSettings({ version: APP_VERSION }).catch(console.error);
+    }
     loadDashboardStats();
-  }, [showList, showBin, showRequests]); // Reload stats when modals close
+  }, [showList, showBin, showRequests, settings.version]); // Reload stats when modals close or cloud changes
 
   const handleRegister = async () => {
     if (!name || !validity || !ra || !course || !birthdate || roles.length === 0) {
