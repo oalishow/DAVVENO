@@ -156,6 +156,15 @@ export default function Verifier({ externalCode, onExternalVerified }: VerifierP
         const raUpper = m.ra?.toUpperCase().trim();
         const legacyUpper = m.legacyQrCode?.toUpperCase().trim();
         
+        let legacyExtractedId = legacyUpper;
+        if (m.legacyQrCode) {
+           try {
+               const lUrl = new URL(m.legacyQrCode);
+               const v = lUrl.searchParams.get('verify');
+               if (v) legacyExtractedId = v.toUpperCase().trim();
+           } catch(_) {}
+        }
+        
         if (isAlphaCode) return alphaUpper === targetId || raUpper === targetId;
 
         return (
@@ -163,9 +172,11 @@ export default function Verifier({ externalCode, onExternalVerified }: VerifierP
           m.legacyId === targetId || 
           alphaUpper === targetId || 
           raUpper === targetId ||
+          (legacyExtractedId && legacyExtractedId === targetId) ||
           (legacyUpper && rawTextUpper === legacyUpper) ||
           (legacyUpper && legacyUpper.includes(rawTextUpper)) ||
-          (legacyUpper && rawTextUpper.includes(legacyUpper))
+          (legacyUpper && rawTextUpper.includes(legacyUpper)) ||
+          (legacyUpper && targetId.length > 5 && legacyUpper.includes(targetId))
         );
       });
 
