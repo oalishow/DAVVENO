@@ -6,6 +6,8 @@ export default function InstallPWA() {
   const [showInstallBtn, setShowInstallBtn] = useState(false);
   const [platform, setPlatform] = useState<'android' | 'ios' | 'other'>('other');
 
+  const [isInstalled, setIsInstalled] = useState(false);
+
   useEffect(() => {
     // Detect platform
     const userAgent = window.navigator.userAgent.toLowerCase();
@@ -21,7 +23,14 @@ export default function InstallPWA() {
       setShowInstallBtn(true);
     };
 
+    const handleAppInstalled = () => {
+      setIsInstalled(true);
+      setShowInstallBtn(false);
+      setDeferredPrompt(null);
+    };
+
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    window.addEventListener('appinstalled', handleAppInstalled);
 
     // Check if already installed
     if (window.matchMedia('(display-mode: standalone)').matches) {
@@ -30,6 +39,7 @@ export default function InstallPWA() {
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener('appinstalled', handleAppInstalled);
     };
   }, []);
 
@@ -42,6 +52,22 @@ export default function InstallPWA() {
     }
     setDeferredPrompt(null);
   };
+
+  if (isInstalled) {
+    return (
+      <div className="bg-sky-600 text-white p-4 rounded-2xl mt-6 no-print shadow-lg animate-bounce">
+         <div className="flex items-center gap-3">
+            <div className="p-2 bg-white/20 rounded-lg">
+              <Download className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold">Instalado com Sucesso!</h3>
+              <p className="text-[10px] opacity-90 uppercase font-black">Procure o ícone na sua tela inicial e abra por lá.</p>
+            </div>
+         </div>
+      </div>
+    );
+  }
 
   if (platform === 'ios' && !window.matchMedia('(display-mode: standalone)').matches) {
     return (
