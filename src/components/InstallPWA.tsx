@@ -4,7 +4,7 @@ import { Download, Info, Share } from 'lucide-react';
 export default function InstallPWA() {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [showInstallBtn, setShowInstallBtn] = useState(false);
-  const [platform, setPlatform] = useState<'android' | 'ios' | 'other'>('other');
+  const [platform, setPlatform] = useState<'android' | 'ios' | 'desktop' | 'other'>('other');
 
   const [isInstalled, setIsInstalled] = useState(false);
 
@@ -15,6 +15,8 @@ export default function InstallPWA() {
       setPlatform('ios');
     } else if (/android/.test(userAgent)) {
       setPlatform('android');
+    } else if (/windows|macintosh|linux/.test(userAgent)) {
+      setPlatform('desktop');
     }
 
     const handleBeforeInstallPrompt = (e: Event) => {
@@ -98,7 +100,9 @@ export default function InstallPWA() {
           </div>
           <div>
             <h3 className="text-sm font-bold text-emerald-900 dark:text-emerald-100">Instalar Aplicativo</h3>
-            <p className="text-[10px] text-emerald-700 dark:text-emerald-400 uppercase tracking-wider font-semibold">Vero ID native web app</p>
+            <p className="text-[10px] text-emerald-700 dark:text-emerald-400 uppercase tracking-wider font-semibold">
+              {platform === 'desktop' ? 'Versão para Windows/PC' : 'Vero ID native web app'}
+            </p>
           </div>
         </div>
         <button 
