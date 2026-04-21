@@ -27,6 +27,7 @@ export default function Verifier({ externalCode, onExternalVerified }: VerifierP
   const [successMsg, setSuccessMsg] = useState('');
   const [cacheLoaded, setCacheLoaded] = useState(false);
   const [initialVerifyChecked, setInitialVerifyChecked] = useState(false);
+  const [lastScannedDebug, setLastScannedDebug] = useState('');
 
   useEffect(() => {
     if (cacheLoaded && externalCode) {
@@ -99,9 +100,11 @@ export default function Verifier({ externalCode, onExternalVerified }: VerifierP
                 { facingMode: "environment" },
                 config,
                 (decodedText: string) => {
+                  console.log("Scanner: Detected code:", decodedText);
                   // Process the result immediately for responsiveness
                   let memberId = decodedText;
                   try {
+                      console.log("Scanner: Attempting parsing...");
                       // More robust URL parameter extraction
                       if (decodedText.includes('verify=')) {
                         const parts = decodedText.split('verify=');
@@ -112,18 +115,26 @@ export default function Verifier({ externalCode, onExternalVerified }: VerifierP
                           const url = new URL(decodedText);
                           memberId = url.searchParams.get('verify') || decodedText;
                       }
-                  } catch (_) {}
+                      console.log("Scanner: Extracted ID:", memberId);
+                  } catch (e) {
+                    console.error("Scanner: Parsing error:", e);
+                    // Fallback to raw text if parsing fails
+                    memberId = decodedText;
+                  }
 
                   // Immediately stop UI feedback and trigger verification
                   setIsScanning(false);
                   runVerification(memberId, false, decodedText);
 
                   // Stop camera as cleanup
-                  ht5Qrcode?.stop().catch(() => {});
+                  ht5Qrcode?.stop().catch((e: any) => console.error("Scanner: Error stopping camera:", e));
                 },
-                () => {} // silent scan failure (it retries every frame)
+                (errorMessage: string) => {
+                    // Usually we do silent failure for scanning, but for debugging we can log
+                    // console.log("Scanner: Scan error (common):", errorMessage);
+                } 
             ).catch((err: any) => {
-                console.error("Camera Error:", err);
+                console.error("Scanner: Camera start error:", err);
                 // Inform user on serious failure
                 if (err?.toString().includes("NotAllowedError") || err?.toString().includes("Permission")) {
                     alert("Por favor, permita o acesso à câmera nas configurações do seu navegador para escanear.");
@@ -365,20 +376,33 @@ export default function Verifier({ externalCode, onExternalVerified }: VerifierP
       </div>
 
       <div id="reader" className={`w-full max-w-sm rounded-xl overflow-hidden shadow-2xl border-2 border-sky-400 dark:border-sky-500/30 aspect-square bg-black ${!isScanning && 'hidden'}`}></div>
+      {isScanning && lastScannedDebug && (
+        <div className="mt-2 text-[10px] text-yellow-600 bg-yellow-50 p-2 rounded max-w-xs break-all">
+          Debug (Last Read): {lastScannedDebug}
+        </div>
+      )}
       
       {isScanning && (
-        <p className="text-[10px] text-slate-500 font-medium animate-pulse">
-          Dica: Aproxime ou afaste a câmera para focar no código.
-        </p>
+        <div className="flex flex-col items-center">
+            <p className="mt-2 text-[10px] text-slate-500 font-medium animate-pulse text-center">
+            Dica: Aproxime ou afaste a câmera para focar no código.
+            </p>
+            {lastScannedDebug && (
+                <div className="mt-2 text-[10px] text-yellow-600 bg-yellow-50 p-2 rounded max-w-xs break-all">
+                Debug (Last Read): {lastScannedDebug}
+                </div>
+            )}
+        </div>
       )}
 
-      <div className="relative flex items-center py-2 w-full max-w-md">
-        <div className="flex-grow border-t border-slate-300 dark:border-slate-700/80"></div>
-        <span className="mx-4 text-slate-500 text-[10px] sm:text-xs font-semibold uppercase tracking-widest">Ou valide manualmente</span>
-        <div className="flex-grow border-t border-slate-300 dark:border-slate-700/80"></div>
-      </div>
-
+      {/* Main Form Area */}
       <div className="w-full max-w-md space-y-4">
+        <div className="relative flex items-center py-2 w-full max-w-md">
+            <div className="flex-grow border-t border-slate-300 dark:border-slate-700/80"></div>
+            <span className="mx-4 text-slate-500 text-[10px] sm:text-xs font-semibold uppercase tracking-widest">Ou valide manualmente</span>
+            <div className="flex-grow border-t border-slate-300 dark:border-slate-700/80"></div>
+        </div>
+
         <div className="bg-white/80 dark:bg-slate-800/40 backdrop-blur-sm p-4 rounded-2xl border border-slate-200 dark:border-slate-700/50 shadow-sm">
           <label className="block text-[10px] sm:text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2 text-center">Código de Identificação ou RA</label>
           <div className="flex flex-col sm:flex-row gap-3">
