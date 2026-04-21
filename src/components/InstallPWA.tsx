@@ -7,8 +7,12 @@ export default function InstallPWA() {
   const [platform, setPlatform] = useState<'android' | 'ios' | 'desktop' | 'other'>('other');
 
   const [isInstalled, setIsInstalled] = useState(false);
+  const [isInIframe, setIsInIframe] = useState(false);
 
   useEffect(() => {
+    // Detect iframe
+    setIsInIframe(window.self !== window.top);
+
     // Detect platform
     const userAgent = window.navigator.userAgent.toLowerCase();
     if (/iphone|ipad|ipod/.test(userAgent)) {
@@ -54,6 +58,24 @@ export default function InstallPWA() {
     }
     setDeferredPrompt(null);
   };
+
+  if (isInIframe && !isInstalled) {
+    return (
+      <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800 p-4 rounded-2xl mt-6 no-print">
+        <div className="flex items-start gap-3">
+          <div className="p-2 bg-amber-100 dark:bg-amber-800 rounded-lg text-amber-600 dark:text-amber-300">
+            <Info className="w-5 h-5" />
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-amber-900 dark:text-amber-100 mb-1">Para Instalar no PC</h3>
+            <p className="text-[11px] text-amber-700 dark:text-amber-300 leading-relaxed">
+              O botão de instalação não funciona dentro da barra lateral. Por favor, <strong>abra o aplicativo em uma nova aba</strong> (clicando no botão de seta no topo da barra lateral) para poder instalar como programa no Windows.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (isInstalled) {
     return (
