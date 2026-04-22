@@ -8,6 +8,19 @@ interface ChangelogModalProps {
 export default function ChangelogModal({ onClose }: ChangelogModalProps) {
   const versions = [
     {
+      version: 'v4.2.5',
+      title: 'Integração e Estabilidade Visual',
+      changes: [
+        'Centralização iOS: O Modal de Atualização agora usa medidas rígidas para garantir travamento central no Safari.',
+        'Anti-Looping PWA: Verificação de atualizações blindada contra loop contínuo e piscadas na tela.',
+        'Anti-Duplicação: Impede novo cadastro caso o RA inserido já pertença a uma carteirinha ativa.',
+        'Validade Automática: Ao cadastrar um membro ou aprovar um pedido, a data padrão agora é de 1 ano.',
+        'Vencimento Inteligente: Carteirinhas vencidas são inativadas sozinhas e vão para Pendentes, avisando o painel gestor.',
+        'Estabilidade Geral: Correção da exportação de fotos para PDF em iPhones e otimização de toques.'
+      ],
+      current: true
+    },
+    {
       version: 'v4.1.0',
       title: 'Identidade FAJOPA & Dupla Assinatura',
       changes: [
@@ -16,7 +29,7 @@ export default function ChangelogModal({ onClose }: ChangelogModalProps) {
         'Branding FAJOPA: Atualização completa do nome da instituição e ícones de instalação.',
         'Layout Otimizado: Reposicionamento de textos e ampliação da área de assinaturas.'
       ],
-      current: true
+      current: false
     },
     {
       version: 'v4.0.0',

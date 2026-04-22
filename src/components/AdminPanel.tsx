@@ -21,7 +21,12 @@ export default function AdminPanel({ onLogout }: { onLogout: () => void }) {
   const [cpf, setCpf] = useState('');
   const [rg, setRg] = useState('');
   const [birthdate, setBirthdate] = useState('');
-  const [validity, setValidity] = useState('');
+  const getDefaultValidity = () => {
+    const d = new Date();
+    d.setFullYear(d.getFullYear() + 1);
+    return d.toISOString().split('T')[0];
+  };
+  const [validity, setValidity] = useState(getDefaultValidity());
   const [roles, setRoles] = useState<string[]>([]);
   const [course, setCourse] = useState('');
   const [diocese, setDiocese] = useState('');
@@ -90,11 +95,31 @@ export default function AdminPanel({ onLogout }: { onLogout: () => void }) {
     try {
       const q = query(collection(db, `artifacts/${appId}/public/data/students`));
       const snapshot = await getDocs(q);
-      const allMembers = snapshot.docs.map((doc) => doc.data() as Member);
+      const allMembers = snapshot.docs.map((d) => ({ id: d.id, ...d.data() as Member }));
+      
+      const todayObj = new Date();
+      const todayStr = todayObj.getFullYear() + '-' + String(todayObj.getMonth() + 1).padStart(2, '0') + '-' + String(todayObj.getDate()).padStart(2, '0');
       
       let active = 0; let inactive = 0; let pending = 0; let trash = 0;
-      allMembers.forEach(m => {
-        if (!m.alphaCode) return; // Skip non-student documents like settings
+      let expiredCountThisSession = 0;
+
+      for (const m of allMembers) {
+        if (!m.alphaCode) continue;
+
+        // Auto-expiration Logic
+        const isExpired = m.validityDate && m.validityDate < todayStr;
+        if (isExpired && m.isActive && m.isApproved && !m.deletedAt) {
+          // Softly inactivate them so they show in requests (isApproved = false)
+          updateDoc(doc(db, `artifacts/${appId}/public/data/students`, m.id), {
+            isActive: false,
+            isApproved: false
+          }).catch(console.error);
+          
+          m.isActive = false;
+          m.isApproved = false;
+          expiredCountThisSession++;
+        }
+
         if (m.deletedAt) {
           trash++;
         } else if (m.isApproved === false || m.pendingChanges) {
@@ -104,7 +129,13 @@ export default function AdminPanel({ onLogout }: { onLogout: () => void }) {
         } else {
           active++;
         }
-      });
+      }
+      
+      if (expiredCountThisSession > 0) {
+        setStatus({ msg: `${expiredCountThisSession} carteirinha(s) recém-vencida(s) foi(ram) movida(s) para Pendentes.`, type: 'error' });
+        setTimeout(() => setStatus(null), 6000);
+      }
+
       setStats({ totalActive: active, totalInactive: inactive, totalPending: pending, totalTrash: trash });
     } catch(e) {
       console.error(e);
@@ -145,12 +176,25 @@ export default function AdminPanel({ onLogout }: { onLogout: () => void }) {
     setStatus({ msg: 'A processar registo...', type: 'loading' });
 
     try {
-      const alphaCode = Array(6).fill(0).map(() => 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'[Math.floor(Math.random() * 36)]).join('');
+      const formattedRa = ra.trim();
       const membersRef = collection(db, `artifacts/${appId}/public/data/students`);
+      
+      const qRa = query(membersRef, where('ra', '==', formattedRa));
+      const raSnapshot = await getDocs(qRa);
+      // Fazer check localmente para ignorar docs deletados, apesar que RAs únicos não deveriam duplicar nem com os deletados
+      const existingActive = raSnapshot.docs.find(doc => !doc.data().deletedAt);
+      
+      if (existingActive) {
+        setStatus({ msg: `Este RA (${formattedRa}) já está cadastrado no sistema. Não é possível cadastrar duplicatas.`, type: 'error' });
+        setTimeout(() => setStatus(null), 5000);
+        return;
+      }
+
+      const alphaCode = Array(6).fill(0).map(() => 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'[Math.floor(Math.random() * 36)]).join('');
 
       await addDoc(membersRef, {
         name: name.trim(),
-        ra: ra.trim(),
+        ra: formattedRa,
         cpf: cpf.trim() || '',
         rg: rg.trim() || '',
         birthdate,

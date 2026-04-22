@@ -25,7 +25,8 @@ import {
   CARD_BACK_IMAGE_KEY,
   INSTITUTION_DESCRIPTION_KEY,
   CARD_DESCRIPTION_KEY,
-  CARD_SIGNATURE_CONFIG_KEY
+  CARD_SIGNATURE_CONFIG_KEY,
+  SECONDARY_BACK_LOGO_SCALE_KEY
 } from '../lib/constants';
 
 interface LogoConfig {
@@ -41,7 +42,8 @@ const MOCK_MEMBER = {
   name: 'JOÃO DA SILVA SAMPLE',
   ra: '2024.0001',
   course: 'TEOLOGIA',
-  diocese: 'MARÍLIA',
+  diocese: 'ASSIS',
+  roles: ['SEMINARISTA'],
   birthdate: '01/01/2000',
   validityDate: '2025-12-31',
   photoUrl: 'https://images.unsplash.com/photo-1633332755192-727a05c4013d?w=400&h=400&fit=crop',
@@ -61,6 +63,7 @@ export default function SettingsModal({ onClose }: { onClose: () => void }) {
   const [instLogo, setInstLogo] = useState<string | null>(cloudSettings.instLogo);
   const [cardLogo, setCardLogo] = useState<string | null>(cloudSettings.cardLogo);
   const [cardBackLogo, setCardBackLogo] = useState<string | null>(cloudSettings.cardBackLogo);
+  const [cardSecondaryBackLogo, setCardSecondaryBackLogo] = useState<string | null>(cloudSettings.cardSecondaryBackLogo);
   const [cardBackImage, setCardBackImage] = useState<string | null>(cloudSettings.cardBackImage);
   
   const [cardFrontText, setCardFrontText] = useState(cloudSettings.cardFrontText);
@@ -73,6 +76,7 @@ export default function SettingsModal({ onClose }: { onClose: () => void }) {
   const [rectorSignature, setRectorSignature] = useState<string | null>(cloudSettings.rectorSignature || null);
   const [signatureScale, setSignatureScale] = useState(cloudSettings.signatureScale);
   const [rectorSignatureScale, setRectorSignatureScale] = useState(cloudSettings.rectorSignatureScale || 100);
+  const [secondaryBackLogoScale, setSecondaryBackLogoScale] = useState(cloudSettings.secondaryBackLogoScale || 100);
   const [instDescription, setInstDescription] = useState(cloudSettings.instDescription);
   const [cardDescription, setCardDescription] = useState(cloudSettings.cardDescription);
   const [visibleFields, setVisibleFields] = useState<Record<string, boolean>>(cloudSettings.visibleFields);
@@ -92,6 +96,7 @@ export default function SettingsModal({ onClose }: { onClose: () => void }) {
   const logoInputRef = useRef<HTMLInputElement>(null);
   const cardLogoInputRef = useRef<HTMLInputElement>(null);
   const cardBackLogoInputRef = useRef<HTMLInputElement>(null);
+  const cardSecondaryBackLogoInputRef = useRef<HTMLInputElement>(null);
   const cardBackInputRef = useRef<HTMLInputElement>(null);
   const signatureInputRef = useRef<HTMLInputElement>(null);
   const rectorSignatureInputRef = useRef<HTMLInputElement>(null);
@@ -114,6 +119,7 @@ export default function SettingsModal({ onClose }: { onClose: () => void }) {
         instLogo,
         cardLogo,
         cardBackLogo,
+        cardSecondaryBackLogo,
         cardBackImage,
         cardFrontText,
         cardBackText,
@@ -123,6 +129,7 @@ export default function SettingsModal({ onClose }: { onClose: () => void }) {
         rectorSignature,
         signatureScale,
         rectorSignatureScale,
+        secondaryBackLogoScale,
         instDescription,
         cardDescription,
         visibleFields,
@@ -145,6 +152,7 @@ export default function SettingsModal({ onClose }: { onClose: () => void }) {
       localStorage.setItem(CARD_FRONT_LOGO_CONFIG_KEY, JSON.stringify(frontLogoConfig));
       localStorage.setItem(CARD_BACK_LOGO_CONFIG_KEY, JSON.stringify(backLogoConfig));
       localStorage.setItem(CARD_SIGNATURE_CONFIG_KEY, signatureScale.toString());
+      localStorage.setItem(SECONDARY_BACK_LOGO_SCALE_KEY, secondaryBackLogoScale.toString());
       if (instLogo) localStorage.setItem(INSTITUTION_LOGO_KEY, instLogo);
       if (cardLogo) localStorage.setItem(CARD_LOGO_KEY, cardLogo);
       if (cardBackLogo) localStorage.setItem(CARD_BACK_LOGO_KEY, cardBackLogo);
@@ -304,9 +312,11 @@ export default function SettingsModal({ onClose }: { onClose: () => void }) {
                 exportMode={true} 
                 settings={{
                   directorName,
+                  rectorName,
                   instLogo,
                   cardLogo,
                   cardBackLogo,
+                  cardSecondaryBackLogo,
                   cardFrontText,
                   cardBackText,
                   frontLogoConfig,
@@ -314,7 +324,10 @@ export default function SettingsModal({ onClose }: { onClose: () => void }) {
                   cardBackImage,
                   cardDescription,
                   signatureScale,
+                  rectorSignatureScale,
+                  secondaryBackLogoScale,
                   instSignature,
+                  rectorSignature,
                   instName,
                   instColor,
                   url,
@@ -384,7 +397,7 @@ export default function SettingsModal({ onClose }: { onClose: () => void }) {
                         <Upload className="w-5 h-5" />
                       </button>
                     )}
-                    <input type="file" ref={logoInputRef} onChange={(e) => handleFileUpload(e, setInstLogo)} accept="image/*" className="hidden" />
+                    <input type="file" ref={logoInputRef} onChange={(e) => handleFileUpload(e, setInstLogo, 2048)} accept="image/*" className="hidden" />
                     <p className="text-[9px] text-slate-400 mt-1">Logo usada no cabeçalho e landing</p>
                   </div>
 
@@ -455,7 +468,7 @@ export default function SettingsModal({ onClose }: { onClose: () => void }) {
                         ) : (
                           <button onClick={() => cardLogoInputRef.current?.click()} className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-400 hover:text-amber-500"><Upload className="w-4 h-4" /></button>
                         )}
-                        <input type="file" ref={cardLogoInputRef} onChange={(e) => handleFileUpload(e, setCardLogo)} accept="image/*" className="hidden" />
+                        <input type="file" ref={cardLogoInputRef} onChange={(e) => handleFileUpload(e, setCardLogo, 2048)} accept="image/*" className="hidden" />
                       </div>
                       <div className="space-y-2">
                         <label className="block text-[8px] font-bold text-slate-400 uppercase">Ajustes Rápidos</label>
@@ -464,6 +477,50 @@ export default function SettingsModal({ onClose }: { onClose: () => void }) {
                            <input type="range" min="50" max="200" value={frontLogoConfig.scale} onChange={e=>setFrontLogoConfig({...frontLogoConfig, scale: Number(e.target.value)})} className="w-full accent-amber-500 h-1 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer" />
                         </div>
                       </div>
+                    </div>
+                  </div>
+
+                  {/* Fundo Personalizado */}
+                  <div className="space-y-3 p-3 bg-white dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
+                    <label className="text-[10px] font-black text-amber-600 uppercase flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-amber-500" /> Verso do Cartão
+                    </label>
+                    <div className="flex flex-col items-center justify-center p-3 border border-dashed border-slate-300 dark:border-slate-600 rounded-lg w-full">
+                      <span className="text-[9px] font-bold text-slate-400 uppercase mb-2">Imagem de Fundo Acrílico (Apenas Verso)</span>
+                      {cardBackImage ? (
+                        <div className="relative group w-full flex justify-center">
+                          <img src={cardBackImage} alt="Fundo Verso" className="h-16 w-auto object-cover mb-1 rounded-md shadow-md" />
+                          <button onClick={() => setCardBackImage(null)} className="absolute -top-2 scale-75 -right-2 p-1 bg-rose-500 text-white rounded-full transition-transform group-hover:scale-95 shadow-lg"><Trash2 className="w-4 h-4" /></button>
+                        </div>
+                      ) : (
+                        <button onClick={() => cardBackInputRef.current?.click()} className="w-full py-2 rounded-lg bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-400 hover:text-amber-500 gap-2 text-xs font-bold">
+                           <Upload className="w-4 h-4" /> Enviar Fundo Opcional
+                        </button>
+                      )}
+                      <input type="file" ref={cardBackInputRef} onChange={(e) => handleFileUpload(e, setCardBackImage, 800)} accept="image/*" className="hidden" />
+                      <p className="text-[8px] text-center text-slate-400 mt-2">Dica: Envie uma imagem no formato retrato (vertical) e de alta resolução. O fundo será aplicado com o efeito acrílico natural.</p>
+                    </div>
+
+                    <div className="flex flex-col items-center justify-center p-3 border border-dashed border-slate-300 dark:border-slate-600 rounded-lg w-full mt-3">
+                      <span className="text-[9px] font-bold text-slate-400 uppercase mb-2 text-center">Logo Secundária (Verso) - Apenas para Dioceses Autorizadas</span>
+                      {cardSecondaryBackLogo ? (
+                        <div className="relative group w-full flex justify-center">
+                          <img src={cardSecondaryBackLogo} alt="Logo Secundária" className="h-10 w-auto object-contain mb-1 rounded" />
+                          <button onClick={() => setCardSecondaryBackLogo(null)} className="absolute -top-2 scale-75 right-1/4 p-1 bg-rose-500 text-white rounded-full transition-transform group-hover:scale-95 shadow-lg"><Trash2 className="w-4 h-4" /></button>
+                        </div>
+                      ) : (
+                        <button onClick={() => cardSecondaryBackLogoInputRef.current?.click()} className="w-full py-2 rounded-lg bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-400 hover:text-sky-500 gap-2 text-xs font-bold">
+                           <Upload className="w-4 h-4" /> Enviar Logo da Diocese
+                        </button>
+                      )}
+                      <input type="file" ref={cardSecondaryBackLogoInputRef} onChange={(e) => handleFileUpload(e, setCardSecondaryBackLogo, 2048)} accept="image/*" className="hidden" />
+                      
+                      <div className="w-full mt-3">
+                         <label className="block text-[8px] font-bold text-slate-400 uppercase text-center mb-1">Tamanho da Logo Secundária ({secondaryBackLogoScale}%)</label>
+                         <input type="range" min="50" max="250" value={secondaryBackLogoScale} onChange={(e) => setSecondaryBackLogoScale(Number(e.target.value))} className="w-full accent-sky-500 h-1 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer" />
+                      </div>
+
+                      <p className="text-[8px] text-center text-slate-400 mt-2 leading-tight">Esta logo aparecerá do lado direito do verso, espelhando a logo principal, exclusivamente para as dioceses: Assis, Presidente Prudente, Ourinhos, Araçatuba e Lins.</p>
                     </div>
                   </div>
                 </div>
@@ -530,30 +587,56 @@ export default function SettingsModal({ onClose }: { onClose: () => void }) {
 
                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       {/* Assinaturas */}
-                      <div className="p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 flex flex-col items-center">
+                      <div className="p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 flex flex-col items-center w-full">
                         <span className="text-[9px] font-bold text-slate-400 uppercase mb-2">Assinatura Diretor</span>
                         {instSignature ? (
-                          <div className="relative group">
+                          <div className="relative group mb-3">
                             <img src={instSignature} alt="Assin" className="h-10 w-auto object-contain bg-white rounded p-0.5" />
                             <button onClick={() => setInstSignature(null)} className="absolute -top-1 -right-1 p-1 bg-rose-500 text-white rounded-full shadow-lg"><Trash2 className="w-2 h-2" /></button>
                           </div>
                         ) : (
-                          <button onClick={() => signatureInputRef.current?.click()} className="p-2 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-400 hover:text-sky-500"><Upload className="w-4 h-4" /></button>
+                          <button onClick={() => signatureInputRef.current?.click()} className="p-2 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-400 hover:text-sky-500 mb-3"><Upload className="w-4 h-4" /></button>
                         )}
                         <input type="file" ref={signatureInputRef} onChange={(e) => handleFileUpload(e, setInstSignature, 300)} accept="image/png" className="hidden" />
+                        
+                        <div className="w-full mt-2">
+                           <div className="flex justify-between text-[8px] text-slate-400 mb-1">
+                             <span>Tamanho: {signatureScale}%</span>
+                           </div>
+                           <input 
+                             type="range" 
+                             min="30" max="250" 
+                             value={signatureScale} 
+                             onChange={(e) => setSignatureScale(Number(e.target.value))}
+                             className="w-full h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer"
+                           />
+                        </div>
                       </div>
 
-                      <div className="p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 flex flex-col items-center">
+                      <div className="p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 flex flex-col items-center w-full">
                         <span className="text-[9px] font-bold text-slate-400 uppercase mb-2">Assinatura Reitor</span>
                         {rectorSignature ? (
-                           <div className="relative group">
+                           <div className="relative group mb-3">
                              <img src={rectorSignature} alt="Assin" className="h-10 w-auto object-contain bg-white rounded p-0.5" />
                              <button onClick={() => setRectorSignature(null)} className="absolute -top-1 -right-1 p-1 bg-rose-500 text-white rounded-full shadow-lg"><Trash2 className="w-2 h-2" /></button>
                            </div>
                         ) : (
-                          <button onClick={() => rectorSignatureInputRef.current?.click()} className="p-2 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-400 hover:text-sky-500"><Upload className="w-4 h-4" /></button>
+                          <button onClick={() => rectorSignatureInputRef.current?.click()} className="p-2 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-400 hover:text-sky-500 mb-3"><Upload className="w-4 h-4" /></button>
                         )}
                         <input type="file" ref={rectorSignatureInputRef} onChange={(e) => handleFileUpload(e, setRectorSignature, 300)} accept="image/png" className="hidden" />
+                        
+                        <div className="w-full mt-2">
+                           <div className="flex justify-between text-[8px] text-slate-400 mb-1">
+                             <span>Tamanho: {rectorSignatureScale}%</span>
+                           </div>
+                           <input 
+                             type="range" 
+                             min="30" max="250" 
+                             value={rectorSignatureScale} 
+                             onChange={(e) => setRectorSignatureScale(Number(e.target.value))}
+                             className="w-full h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer"
+                           />
+                        </div>
                       </div>
                    </div>
                 </div>

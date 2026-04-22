@@ -12,6 +12,7 @@ interface AppSettings {
   instLogo: string | null;
   cardLogo: string | null;
   cardBackLogo: string | null;
+  cardSecondaryBackLogo: string | null;
   cardBackImage: string | null;
   cardFrontText: string;
   cardBackText: string;
@@ -21,6 +22,7 @@ interface AppSettings {
   rectorSignature: string | null;
   signatureScale: number;
   rectorSignatureScale: number;
+  secondaryBackLogoScale: number;
   instDescription: string;
   cardDescription: string;
   visibleFields: Record<string, boolean>;
@@ -40,6 +42,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   instLogo: null,
   cardLogo: null,
   cardBackLogo: null,
+  cardSecondaryBackLogo: null,
   cardBackImage: null,
   cardFrontText: '',
   cardBackText: '',
@@ -49,6 +52,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   rectorSignature: null,
   signatureScale: 100,
   rectorSignatureScale: 100,
+  secondaryBackLogoScale: 100,
   instDescription: 'SISTEMA DE VERIFICAÇÃO DE IDENTIDADE',
   cardDescription: 'DOCUMENTO PADRONIZADO NACIONALMENTE CONFORME A LEI 12.933/2013 E DECRETO 8.537/2015 QUE ASSEGURAM O DIREITO À MEIA-ENTRADA.',
   visibleFields: {
@@ -101,6 +105,15 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
           ...(data.visibleFields || {})
         };
 
+        // Remove heavy fields from main data if they are empty/null to avoid 
+        // overwriting the active loaded assets from the secondary snapshots
+        const heavyFieldsList = ['instLogo', 'cardLogo', 'cardBackLogo', 'cardSecondaryBackLogo', 'cardBackImage', 'instSignature', 'rectorSignature'];
+        heavyFieldsList.forEach(field => {
+          if (data[field] === null || data[field] === undefined) {
+            delete data[field];
+          }
+        });
+
         setSettings(prev => ({ 
           ...prev, 
           ...data,
@@ -114,15 +127,14 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     unsubscribes.push(unsubMain);
 
     // Listeners para Ativos Pesados individuais
-    const heavyFields = ['instLogo', 'cardLogo', 'cardBackLogo', 'cardBackImage', 'instSignature', 'rectorSignature'];
-    heavyFields.forEach(field => {
+    const heavyFieldsList = ['instLogo', 'cardLogo', 'cardBackLogo', 'cardSecondaryBackLogo', 'cardBackImage', 'instSignature', 'rectorSignature'];
+    heavyFieldsList.forEach(field => {
       const assetRef = doc(db, ASSETS_DOC_PATH(appId, field));
       const unsubAsset = onSnapshot(assetRef, (snapshot) => {
         if (snapshot.exists()) {
           const { data } = snapshot.data();
-          if (data) {
-            setSettings(prev => ({ ...prev, [field]: data }));
-          }
+          // Aceita o data mesmo se for null, para refletir deletes no realtime
+          setSettings(prev => ({ ...prev, [field]: data || null }));
         }
       });
       unsubscribes.push(unsubAsset);
@@ -134,21 +146,23 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   const updateSettings = async (newSettings: Partial<AppSettings>) => {
     const docRef = doc(db, SETTINGS_DOC_PATH(appId));
     
-    // Lista de campos que são imagens pesadas
-    const heavyFields = ['instLogo', 'cardLogo', 'cardBackLogo', 'cardBackImage', 'instSignature', 'rectorSignature'];
+    const heavyFields = ['instLogo', 'cardLogo', 'cardBackLogo', 'cardSecondaryBackLogo', 'cardBackImage', 'instSignature', 'rectorSignature'];
     
     const settingsToSave = { ...newSettings };
     const assetOperations: Promise<any>[] = [];
 
-    // Separar campos pesados
     heavyFields.forEach(field => {
       if (field in newSettings) {
         const val = (newSettings as any)[field];
-        // Se existe e é uma string base64 grande, removemos do doc principal e salvamos em separado
+        const assetRef = doc(db, ASSETS_DOC_PATH(appId, field));
+        
         if (val && typeof val === 'string' && val.length > 500) {
-          const assetRef = doc(db, ASSETS_DOC_PATH(appId, field));
+          // Salva asset grande separado
           assetOperations.push(setDoc(assetRef, { data: val }));
           delete (settingsToSave as any)[field];
+        } else if (val === null) {
+          // Quando deletado explicitamente, limpa do doc separado e permite que o null continue pro settingsToSave principal
+          assetOperations.push(setDoc(assetRef, { data: null }));
         }
       }
     });

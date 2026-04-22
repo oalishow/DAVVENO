@@ -8,9 +8,11 @@ interface FajopaIDCardProps {
   exportMode?: boolean;
   settings?: {
     directorName?: string;
+    rectorName?: string;
     instLogo?: string | null;
     cardLogo?: string | null;
     cardBackLogo?: string | null;
+    cardSecondaryBackLogo?: string | null;
     cardFrontText?: string;
     cardBackText?: string;
     url?: string;
@@ -19,7 +21,10 @@ interface FajopaIDCardProps {
     cardBackImage?: string | null;
     cardDescription?: string;
     signatureScale?: number;
+    rectorSignatureScale?: number;
+    secondaryBackLogoScale?: number;
     instSignature?: string | null;
+    rectorSignature?: string | null;
     instName?: string;
     instColor?: string;
     visibleFields?: Record<string, boolean>;
@@ -42,6 +47,7 @@ export default function FajopaIDCard({ member, exportMode = false, settings: pro
     instLogo,
     cardLogo,
     cardBackLogo,
+    cardSecondaryBackLogo,
     cardFrontText,
     cardBackText,
     url: baseUrl,
@@ -51,6 +57,7 @@ export default function FajopaIDCard({ member, exportMode = false, settings: pro
     cardDescription,
     signatureScale,
     rectorSignatureScale,
+    secondaryBackLogoScale = 100,
     instSignature,
     rectorSignature,
     instName,
@@ -62,6 +69,14 @@ export default function FajopaIDCard({ member, exportMode = false, settings: pro
   const displayLogoFront = cardLogo || instLogo;
   const displayLogoBack = cardBackLogo || cardLogo || instLogo;
   const displayDescription = cardDescription || 'Documento padronizado nacionalmente conforme a lei 12.933/2013.\nVálido em todo território nacional até o findar da validade.';
+  
+  const normalizedDiocese = member.diocese?.toUpperCase().trim() || '';
+  const isSeminarista = member.roles?.some(r => r.trim().toUpperCase() === 'SEMINARISTA');
+  const validDiocese = ['ASSIS', 'PRESIDENTE PRUDENTE', 'OURINHOS', 'ARAÇATUBA', 'ARACATUBA', 'LINS'].includes(normalizedDiocese);
+  const showRector = isSeminarista && validDiocese;
+  const showSecondaryLogo = validDiocese;
+  
+  const displayInstNameForCard = (isSeminarista && !validDiocese && instName === 'FAJOPA e SPSCJ') ? 'FAJOPA' : instName;
 
   useEffect(() => {
     if (exportMode) return;
@@ -119,26 +134,36 @@ export default function FajopaIDCard({ member, exportMode = false, settings: pro
     >
       {/* Top Divider / Header Decor */}
       <div 
-        className="absolute top-0 left-0 w-full h-[18%] border-b-4 flex items-center justify-between px-[5%] z-20 shadow-sm"
+        className="absolute top-0 left-0 w-full h-[22%] border-b-4 flex items-center justify-between px-[5%] z-20 shadow-sm"
         style={{ 
           backgroundColor: '#0c1222', // Very dark for contrast
           borderBottomColor: instColor 
         }}
       >
-         <h1 className="text-white font-black tracking-tight" style={{ fontSize: '20px' }}>
-           {cardFrontText || 'IDENTIFICAÇÃO ESTUDANTIL'}
+         <h1 className="text-white font-black tracking-tighter whitespace-nowrap" style={{ fontSize: '18px' }}>
+            {isSeminarista ? 'DOCUMENTO ESTUDANTIL E VOCACIONAL' : (cardFrontText || 'IDENTIFICAÇÃO ESTUDANTIL')}
          </h1>
-         <span className="text-white opacity-80 text-[11px] font-bold tracking-widest bg-white/10 px-3 py-1 rounded-full uppercase">
-           {instName === 'Vero ID' || instName === 'A vero ID' || instName === 'DA VERO-ID' || instName === 'DAVVERO-ID' || instName === 'FAJOPA e SPSCJ' ? 'FAJOPA e SPSCJ' : instName}
+         <span className="text-white opacity-80 text-[9px] font-bold tracking-widest bg-white/10 px-2 py-0.5 rounded-full uppercase ml-1">
+           {displayInstNameForCard === 'Vero ID' || displayInstNameForCard === 'A vero ID' || displayInstNameForCard === 'DA VERO-ID' || displayInstNameForCard === 'DAVVERO-ID' || displayInstNameForCard === 'FAJOPA e SPSCJ' ? (displayInstNameForCard === 'FAJOPA' ? 'FAJOPA' : 'FAJOPA e SPSCJ') : displayInstNameForCard}
          </span>
       </div>
 
+      {/* Dark Red Bottom Decorative Border */}
+      <div 
+        className="absolute bottom-0 left-0 w-full h-[6%] z-30 flex flex-col justify-between"
+        style={{ 
+          backgroundColor: '#7f1d1d' // Dark red
+        }}
+      >
+        <div style={{ height: '20%', backgroundColor: '#fbbf24' }}></div>
+      </div>
+
       {/* Bottom Footer block */}
-      <div className="absolute bottom-0 left-0 w-[60%] h-[30%]" style={{ backgroundColor: '#0c1222', clipPath: 'polygon(0 40%, 100% 100%, 0 100%)', zIndex: 0 }}></div>
+      <div className="absolute bottom-[4%] left-0 w-[60%] h-[26%]" style={{ backgroundColor: '#0c1222', clipPath: 'polygon(0 40%, 100% 100%, 0 100%)', zIndex: 0 }}></div>
       <div className="absolute bottom-0 left-0 w-[55%] h-[20%]" style={{ backgroundColor: '#0f172a', clipPath: 'polygon(0 40%, 100% 100%, 0 100%)', zIndex: 1 }}></div>
 
       <div 
-        className="absolute bottom-0 left-[20%] right-[32%] h-[17%] flex items-center justify-center z-2" 
+        className="absolute bottom-[6%] left-[20%] right-[32%] h-[17%] flex items-center justify-center z-2" 
         style={{ 
           backgroundColor: '#0f172a',
           clipPath: 'polygon(5% 0, 100% 0, 100% 100%, 0 100%)' 
@@ -156,29 +181,29 @@ export default function FajopaIDCard({ member, exportMode = false, settings: pro
          </span>
       </div>
 
-      {/* Texts over left bottom */}
-      <div className="absolute bottom-[4%] left-[4%] text-white z-10 flex flex-col items-center">
-        <span className="font-bold leading-none" style={{ fontSize: '12px' }}>CÓD. USO:</span>
-        <span className="font-bold tracking-widest leading-none mt-1 bg-black/20 px-2 py-0.5 rounded" style={{ fontSize: '16px' }}>
+      {/* Texts over left bottom - Clean design for CÓD USO */}
+      <div className="absolute bottom-[7%] left-[4%] text-white z-10 flex flex-col items-center px-2 py-1 rounded-sm border-l-2 border-cyan-400 bg-black/10">
+        <span className="font-bold tracking-wider leading-none" style={{ fontSize: '8px', opacity: 0.8 }}>CÓD. USO</span>
+        <span className="font-bold tracking-widest leading-none mt-1" style={{ fontSize: '13px' }}>
           {member.alphaCode}
         </span>
       </div>
 
-      {/* Left Values List */}
-      <div className="absolute top-[26%] left-[3%] w-[63%] h-[48%] flex flex-col justify-around z-20">
+      {/* Left Values List - Reduced width to avoid logo */}
+      <div className="absolute top-[26%] left-[3%] w-[58%] h-[48%] flex flex-col justify-around z-20">
         {[
-          { id: 'name', label: 'NOME:', value: safeName, w: '100%', isName: true },
-          { id: 'ra', label: 'R.A.:', value: safeRA, w: '50%' },
-          { id: 'course', label: 'CURSO:', value: safeCourse, w: '50%' },
-          { id: 'birth', label: 'NASC:', value: safeBirth, w: '50%' },
-          { id: 'validity', label: 'VAL:', value: safeDate, w: '50%' },
-          { id: 'diocese', label: 'DIOCESE:', value: member.diocese || '-', w: '50%' },
+          { id: 'name', label: 'NOME:', value: safeName, w: '100%', isName: true, border: '1.5px' },
+          { id: 'ra', label: 'R.A.:', value: safeRA, w: '50%', border: '1.5px' },
+          { id: 'course', label: 'CURSO:', value: safeCourse, w: '50%', border: '1.5px' },
+          { id: 'birth', label: 'NASC:', value: safeBirth, w: '50%', border: '1.5px' },
+          { id: 'validity', label: 'VAL:', value: safeDate, w: '50%', border: '1.5px' },
+          { id: 'diocese', label: 'DIOCESE:', value: member.diocese || '-', w: ((member.diocese?.length || 0) < 15 ? '50%' : '65%'), border: '1.5px' },
         ].filter(r => visibleFields?.[r.id]).map((row, i) => (
-          <div key={i} className={`flex bg-white rounded-full border-[1.5px] border-slate-400 overflow-hidden shadow-sm items-center ${row.isName ? 'h-[22%]' : 'h-[14%]'}`} style={{ width: row.w }}>
-            <span className="bg-white text-blue-900 font-bold px-2 flex items-center justify-center h-full border-r-[1.5px] border-slate-300 tracking-tight shrink-0" style={{ fontSize: '12px' }}>
+          <div key={i} className={`flex bg-white rounded-full border-[${row.border}] border-slate-400 overflow-hidden shadow-sm items-center ${row.isName ? 'h-[22%]' : 'h-[14%]'}`} style={{ width: row.w }}>
+            <span className="bg-white text-blue-900 font-bold px-2 flex items-center justify-center h-full border-r-[1.5px] border-slate-300 tracking-tight shrink-0" style={{ fontSize: '10px' }}>
               {row.label}
             </span>
-            <span className={`text-slate-800 font-bold px-2 bg-white flex-1 h-full flex items-center ${row.isName ? 'text-left justify-start whitespace-normal leading-[1.05] break-words' : 'justify-center whitespace-nowrap overflow-hidden text-ellipsis'}`} style={{ fontSize: row.isName ? '12px' : '12px' }}>
+            <span className={`text-slate-800 font-bold px-2 bg-white flex-1 h-full flex items-center ${row.isName ? 'text-left justify-start whitespace-normal leading-[1.05] break-words' : 'justify-center whitespace-nowrap overflow-hidden text-ellipsis'}`} style={{ fontSize: row.isName ? '12px' : '10px' }}>
               {row.value}
             </span>
           </div>
@@ -236,23 +261,28 @@ export default function FajopaIDCard({ member, exportMode = false, settings: pro
         </div>
       )}
 
-      {/* Right Area (Photo & QR Code) */}
-      <div className="absolute top-[20%] right-[3%] w-[28%] h-[78%] flex flex-col items-center justify-start pt-[2%] z-20">
+      {/* Right Area (Photo & QR Code) - Reduced height to avoid footer overlap */}
+      <div className="absolute top-[20%] right-[3%] w-[28%] h-[72%] flex flex-col items-center justify-start pt-[2%] z-10">
         {visibleFields.photo && (
-          <div className="w-[90%] bg-white rounded-[15%] border-[3px] border-slate-800 overflow-hidden shadow-md" style={{ aspectRatio: '3/3.8' }}>
+          <div className="w-[100%] bg-white rounded-[5%] border-[3px] border-slate-800 overflow-hidden shadow-md" style={{ aspectRatio: '3/3.5' }}>
             <img src={avatarUrl} crossOrigin="anonymous" alt="Fotografia" className="w-full h-full object-cover" />
           </div>
         )}
         
         {visibleFields.qrcode && (
-          <div className="w-[60%] aspect-square bg-white border-[2px] border-slate-800 p-1 shadow-sm mt-[6%]">
-             <QRCodeSVG 
-              value={verificationUrl} 
-              size={256}
-              style={{ width: '100%', height: '100%' }}
-              level="M" 
-              includeMargin={false}
-            />
+          <div className={`flex flex-row items-center mt-[15%] ${isSeminarista && validDiocese && cardSecondaryBackLogo ? 'w-[105%] ml-[5%] gap-0' : 'w-[55%]'}`}>
+            <div className="flex-1 aspect-square bg-white border-[2px] border-slate-800 p-1 shadow-sm">
+               <QRCodeSVG 
+                value={verificationUrl} 
+                size={256}
+                style={{ width: '100%', height: '100%' }}
+                level="M" 
+                includeMargin={false}
+              />
+            </div>
+            {isSeminarista && validDiocese && cardSecondaryBackLogo && (
+               <img src={cardSecondaryBackLogo} alt="Logo Diocese" className="flex-none w-[50%] object-contain" />
+            )}
           </div>
         )}
       </div>
@@ -275,6 +305,11 @@ export default function FajopaIDCard({ member, exportMode = false, settings: pro
         backgroundPosition: 'center'
       }}
     >
+      {/* Acrylic overlay for better readability if custom background is used */}
+      {cardBackImage && (
+        <div className="absolute inset-0 bg-white/40 backdrop-blur-[2px] z-0"></div>
+      )}
+
       {/* Top left decors - Only show if NO custom background */}
       {!cardBackImage && (
         <>
@@ -283,11 +318,11 @@ export default function FajopaIDCard({ member, exportMode = false, settings: pro
         </>
       )}
       
-      <div className={`absolute top-[10%] w-[86%] left-[7%] text-center text-blue-950 font-bold leading-tight ${cardBackImage ? 'bg-white/70 shadow-sm' : 'bg-white/95 border-[2px] border-slate-200 shadow-md'} backdrop-blur-sm rounded-xl p-2 z-10 flex flex-col justify-center`} style={{ fontSize: '11px', minHeight: '40px' }}>
+      <div className={`absolute top-[10%] w-[86%] left-[7%] text-center text-blue-950 font-bold leading-tight ${cardBackImage ? 'bg-white/80 shadow-md border border-white' : 'bg-white/95 border-[2px] border-slate-200 shadow-md'} backdrop-blur-md rounded-xl p-2 z-10 flex flex-col justify-center`} style={{ fontSize: '11px', minHeight: '40px' }}>
         Este cartão é pessoal e intransferível, sendo o usuário responsável pela utilização. Em caso de perda, avise imediatamente a secretaria da faculdade.
       </div>
 
-      <div className="absolute top-[28%] w-full flex flex-col items-center z-0">
+      <div className="absolute top-[28%] w-full flex flex-col items-center z-10">
         <div className="w-full flex justify-center gap-10 px-4">
           {/* Signature 1: Director */}
           {(visibleFields.signature || visibleFields.director) && (
@@ -318,7 +353,7 @@ export default function FajopaIDCard({ member, exportMode = false, settings: pro
           )}
 
           {/* Signature 2: Rector */}
-          {(visibleFields.rectorSignature || visibleFields.rector) && (
+          {showRector && (visibleFields.rectorSignature || visibleFields.rector) && (
             <div className="flex flex-col items-center min-w-[140px] max-w-[180px]">
                {visibleFields.rectorSignature && (
                 <div className="w-full h-[45px] border-b-[2px] border-slate-800 flex items-center justify-center pb-1">
@@ -328,8 +363,8 @@ export default function FajopaIDCard({ member, exportMode = false, settings: pro
                        alt="Assinatura Reitor" 
                        className="w-auto object-contain" 
                        style={{ 
-                         height: `${(rectorSignatureScale / 100) * 110}%`,
-                         marginBottom: `-${(rectorSignatureScale / 100) * 6}%` 
+                         height: `${((rectorSignatureScale || 100) / 100) * 110}%`,
+                         marginBottom: `-${((rectorSignatureScale || 100) / 100) * 6}%` 
                        }} 
                      />
                    )}
@@ -353,7 +388,7 @@ export default function FajopaIDCard({ member, exportMode = false, settings: pro
               transform: `translate(${backLogoConfig.x}px, ${backLogoConfig.y}px) scale(${backLogoConfig.scale / 100})`,
             }}
           >
-             <div className="w-[50px] h-[50px]">
+             <div className="w-[50px] h-[50px] shrink-0">
                 {displayLogoBack ? (
                    <img 
                       src={displayLogoBack} 
@@ -394,7 +429,7 @@ export default function FajopaIDCard({ member, exportMode = false, settings: pro
              </div>
              <div className="flex flex-col text-left">
                 <div className="flex items-center gap-1">
-                  <span className="text-blue-900 font-black tracking-tighter" style={{ fontSize: '22px', lineHeight: '1' }}>{cardBackText || (instName === 'Vero ID' || instName === 'A vero ID' || instName === 'DA VERO-ID' || instName === 'DAVVERO-ID' || instName === 'FAJOPA e SPSCJ' ? 'FAJOPA e SPSCJ' : instName)}</span>
+                  <span className="text-blue-900 font-black tracking-tighter" style={{ fontSize: '22px', lineHeight: '1' }}>{cardBackText || (displayInstNameForCard === 'Vero ID' || displayInstNameForCard === 'A vero ID' || displayInstNameForCard === 'DA VERO-ID' || displayInstNameForCard === 'DAVVERO-ID' || displayInstNameForCard === 'FAJOPA e SPSCJ' ? (displayInstNameForCard === 'FAJOPA' ? 'FAJOPA' : 'FAJOPA e SPSCJ') : displayInstNameForCard)}</span>
                 </div>
                 {instName === 'FAJOPA' && (
                   <div className="bg-blue-900 text-white rounded font-bold px-1 py-0.5 text-center mt-0.5 whitespace-nowrap shadow-sm" style={{ fontSize: '8px' }}>
@@ -405,6 +440,23 @@ export default function FajopaIDCard({ member, exportMode = false, settings: pro
                   {baseUrl.replace('https://', '').replace('http://', '')}
                 </span>
              </div>
+
+             {showSecondaryLogo && cardSecondaryBackLogo && (
+               <div 
+                 className="ml-1 shrink-0 flex items-center justify-center transition-all"
+                 style={{
+                   width: `${50 * (secondaryBackLogoScale / 100)}px`,
+                   height: `${50 * (secondaryBackLogoScale / 100)}px`
+                 }}
+               >
+                 <img 
+                    src={cardSecondaryBackLogo} 
+                    alt="Logo Secundária" 
+                    className="w-full h-full object-contain" 
+                    style={{ filter: 'drop-shadow(0 0 2px white) drop-shadow(0 0 1px white)' }}
+                 />
+               </div>
+             )}
           </div>
         )}
         

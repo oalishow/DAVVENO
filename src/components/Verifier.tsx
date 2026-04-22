@@ -87,7 +87,12 @@ export default function Verifier({ externalCode, onExternalVerified }: VerifierP
             
             const config = {
                 fps: 10,
-                qrbox: { width: 250, height: 250 },
+                qrbox: (viewfinderWidth: number, viewfinderHeight: number) => {
+                    const minEdgePercentage = 0.75;
+                    const minEdgeSize = Math.min(viewfinderWidth, viewfinderHeight);
+                    const qrboxSize = Math.floor(minEdgeSize * minEdgePercentage);
+                    return { width: qrboxSize, height: qrboxSize };
+                },
                 aspectRatio: 1.0,
                 disableFlip: false,
                 // Adding videoConstraints explicitly for Safari
@@ -179,10 +184,14 @@ export default function Verifier({ externalCode, onExternalVerified }: VerifierP
         const raUpper = m.ra?.toUpperCase().trim();
         const legacyUpper = m.legacyQrCode?.toUpperCase().trim();
         
+        // Remove all whitespace/symbols for aggressive matching
+        const sanitize = (str?: string) => (str || '').replace(/[^A-Z0-9]/ig, '').toUpperCase();
+        const rawSanitized = sanitize(rawScannedText || idOrCode);
+        const legacySanitized = sanitize(m.legacyQrCode);
+        
         let legacyExtractedId = legacyUpper;
         if (m.legacyQrCode) {
            try {
-               // More robust URL parameter extraction for legacy base
                if (m.legacyQrCode.includes('verify=')) {
                    const parts = m.legacyQrCode.split('verify=');
                    if (parts.length > 1) {
@@ -209,7 +218,9 @@ export default function Verifier({ externalCode, onExternalVerified }: VerifierP
           (legacyUpper && legacyUpper.includes(targetId)) ||
           (legacyUpper && rawTextUpper.includes(legacyUpper)) ||
           (targetId.length > 4 && legacyUpper && legacyUpper.includes(targetId)) ||
-          (rawTextUpper.length > 4 && legacyUpper && rawTextUpper.includes(legacyUpper))
+          (rawTextUpper.length > 4 && legacyUpper && rawTextUpper.includes(legacyUpper)) ||
+          (legacySanitized.length > 4 && rawSanitized.includes(legacySanitized)) ||
+          (legacySanitized.length > 4 && legacySanitized === rawSanitized)
         );
       });
 

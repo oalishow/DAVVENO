@@ -1,7 +1,7 @@
 import { useState, useEffect, ChangeEvent } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Save, ShieldCheck, Image as ImageIcon } from 'lucide-react';
-import { collection, addDoc } from 'firebase/firestore';
+import { collection, addDoc, query, where, getDocs } from 'firebase/firestore';
 import { db, appId } from '../lib/firebase';
 import { useSettings } from '../context/SettingsContext';
 import type { Member } from '../types';
@@ -97,9 +97,23 @@ export default function PublicRequestModal({ onClose, onSubmitSuccess }: PublicR
     setError('');
 
     try {
+      const formattedRa = ra.trim();
+      const membersRef = collection(db, `artifacts/${appId}/public/data/students`);
+
+      const qRa = query(membersRef, where('ra', '==', formattedRa));
+      const raSnapshot = await getDocs(qRa);
+      // Fazer check para não permitir se já existir (mesmo inativo ou na lixeira) para evitar conflitos de RA
+      const existingActive = raSnapshot.docs.find(doc => !doc.data().deletedAt);
+      
+      if (existingActive) {
+        setError(`Este RA (${formattedRa}) já está cadastrado no sistema.`);
+        setLoading(false);
+        return;
+      }
+
       const payload: Partial<Member> = {
         name: name.trim(),
-        ra: ra.trim(),
+        ra: formattedRa,
         email: email.trim(),
         rg: rg.trim(),
         cpf: cpf.trim(),

@@ -20,11 +20,12 @@ export const CARD_BACK_TEXT_KEY = 'davveroId_card_back_text';
 export const CARD_VISIBLE_FIELDS_KEY = 'davveroId_card_visible_fields';
 export const CARD_BACK_IMAGE_KEY = 'davveroId_card_back_image';
 export const CARD_SIGNATURE_CONFIG_KEY = 'davveroId_card_signature_config';
+export const SECONDARY_BACK_LOGO_SCALE_KEY = 'davveroId_secondary_back_logo_scale';
 export const INSTITUTION_DESCRIPTION_KEY = 'davveroId_institution_description';
 export const CARD_DESCRIPTION_KEY = 'davveroId_card_description';
 export const CUSTOM_ROLES_KEY = 'davveroId_custom_roles';
 export const CUSTOM_COURSES_KEY = 'davveroId_custom_courses';
-export const APP_VERSION = '4.2.5';
+export const APP_VERSION = '4.2.9';
 export const SETTINGS_DOC_PATH = (appId: string) => `artifacts/${appId}/public/data/students/_settings_global`;
 export const ASSETS_DOC_PATH = (appId: string, assetType: string) => `artifacts/${appId}/public/data/students/_asset_${assetType}`;
 export const CHANGELOG = [
