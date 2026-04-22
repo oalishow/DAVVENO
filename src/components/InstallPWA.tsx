@@ -135,7 +135,28 @@ export default function InstallPWA() {
     );
   }
 
-  if (!showInstallBtn) return null;
+  if (!showInstallBtn) {
+    // Se não houver prompt automático (comum em muitos navegadores mobile ou quando já recusado)
+    // Mostramos instruções genéricas se não estiver em modo standalone
+    if (!window.matchMedia('(display-mode: standalone)').matches && !isInIframe) {
+      return (
+        <div className="bg-slate-50 dark:bg-slate-900/20 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl mt-6 no-print">
+          <div className="flex items-start gap-3">
+            <div className="p-2 bg-slate-100 dark:bg-slate-800 rounded-lg text-slate-500 dark:text-slate-400">
+              <Info className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 mb-1">Como Instalar</h3>
+              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                Para rodar como aplicativo (PWA): no <strong>Chrome</strong> ou <strong>Edge</strong>, clique nos <strong>três pontos (⋮)</strong> e procure por <strong>"Instalar aplicativo"</strong>. Em outros navegadores, procure no menu a opção <strong>"Adicionar à tela de início"</strong>.
+              </p>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    return null;
+  }
 
   return (
     <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800 p-4 rounded-2xl mt-6 no-print">
