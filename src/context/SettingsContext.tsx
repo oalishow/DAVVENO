@@ -67,7 +67,7 @@ const DEFAULT_SETTINGS: AppSettings = {
     footer: true,
     diocese: true
   },
-  version: '4.2.0',
+  version: '4.2.5',
   customRoles: [],
   customCourses: [],
   customDioceses: [],

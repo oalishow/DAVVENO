@@ -107,14 +107,14 @@ export default function FajopaIDCard({ member, exportMode = false, settings: pro
 
   const frontSide = (
     <div 
-      className={`absolute w-[600px] h-[378px] backface-hidden print-card bg-gradient-to-br from-indigo-50 via-sky-50 to-cyan-100 overflow-hidden shadow-2xl shrink-0`} 
+      className={`absolute w-[600px] h-[378px] print-card bg-gradient-to-br from-indigo-50 via-sky-50 to-cyan-100 overflow-hidden shadow-2xl shrink-0`} 
       style={{ 
         borderRadius: '16px', 
         border: '1px solid rgba(0,0,0,0.1)',
-        WebkitBackfaceVisibility: 'hidden',
-        backfaceVisibility: 'hidden',
-        transform: 'translate3d(0,0,0)',
-        WebkitTransform: 'translate3d(0,0,0)'
+        WebkitBackfaceVisibility: exportMode ? 'visible' : 'hidden',
+        backfaceVisibility: exportMode ? 'visible' : 'hidden',
+        transform: exportMode ? 'none' : 'translate3d(0,0,0)',
+        WebkitTransform: exportMode ? 'none' : 'translate3d(0,0,0)'
       }}
     >
       {/* Top Divider / Header Decor */}
@@ -261,14 +261,14 @@ export default function FajopaIDCard({ member, exportMode = false, settings: pro
 
   const backSide = (
     <div 
-      className={`absolute w-[600px] h-[378px] backface-hidden print-card overflow-hidden shadow-2xl shrink-0`} 
+      className={`absolute w-[600px] h-[378px] print-card overflow-hidden shadow-2xl shrink-0`} 
       style={{ 
         borderRadius: '16px', 
         border: '1px solid rgba(0,0,0,0.1)',
-        WebkitBackfaceVisibility: 'hidden',
-        backfaceVisibility: 'hidden',
-        transform: exportMode ? 'translate3d(0,0,0)' : 'rotateY(180deg) translate3d(0,0,0)',
-        WebkitTransform: exportMode ? 'translate3d(0,0,0)' : 'rotateY(180deg) translate3d(0,0,0)',
+        WebkitBackfaceVisibility: exportMode ? 'visible' : 'hidden',
+        backfaceVisibility: exportMode ? 'visible' : 'hidden',
+        transform: exportMode ? 'none' : 'rotateY(180deg)',
+        WebkitTransform: exportMode ? 'none' : 'rotateY(180deg)',
         backgroundColor: '#f8fafc',
         backgroundImage: cardBackImage ? `url(${cardBackImage})` : 'linear-gradient(to br, #eef2ff, #f0f9ff)',
         backgroundSize: 'cover',

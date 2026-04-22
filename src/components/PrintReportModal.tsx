@@ -93,8 +93,10 @@ export default function PrintReportModal({ onClose }: PrintReportModalProps) {
                     <td className="p-2 border border-slate-200 dark:border-slate-700 text-center">
                       <img 
                         src={m.photoUrl || `https://ui-avatars.com/api/?name=${encodeURIComponent(m.name || 'U')}&background=e2e8f0&color=475569`} 
+                        crossOrigin="anonymous"
                         className="w-8 h-8 rounded-full object-cover mx-auto border border-slate-200" 
                         alt=""
+                        loading="eager"
                       />
                     </td>
                     <td className="p-3 border border-slate-200 dark:border-slate-700 text-xs font-bold text-slate-800 dark:text-slate-200">{m.name}</td>

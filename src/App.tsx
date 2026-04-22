@@ -23,15 +23,16 @@ export default function App() {
   const [updateStatus, setUpdateStatus] = useState<'idle' | 'success'>('idle');
 
   useEffect(() => {
-    // Monitorar atualizações via nuvem
-    if (settings?.version && settings.version !== APP_VERSION) {
-      // Verificar se essa versão específica da nuvem já foi ignorada ou aplicada nesta sessão
-      const lastSeenCloudVersion = localStorage.getItem('last_seen_cloud_version');
-      if (lastSeenCloudVersion !== settings.version) {
+    // Monitorar atualizações do código-fonte, não do banco de dados para evitar piscar/sumir
+    const savedVersion = localStorage.getItem('last_seen_app_version');
+    if (savedVersion !== APP_VERSION) {
+      // Ocultar após o salvamento pra evitar mostrar novamente sem querer
+      const t = setTimeout(() => {
         setShowUpdateModal(true);
-      }
+      }, 500);
+      return () => clearTimeout(t);
     }
-  }, [settings?.version]);
+  }, []);
 
   const handleGlobalVerify = (code: string) => {
     setTargetVerifyCode(code);
@@ -45,21 +46,17 @@ export default function App() {
 
   const handleUpdateClick = () => {
     setUpdateStatus('success');
-    if (settings?.version) {
-      localStorage.setItem('last_seen_cloud_version', settings.version);
-    }
-    localStorage.setItem('app_version', APP_VERSION);
+    localStorage.setItem('last_seen_app_version', APP_VERSION);
     
-    // Pequeno delay para mostrar que foi aplicado
+    // Um pouco mais de tempo para lerem a mensagem de sucesso (2.5s)
     setTimeout(() => {
-      window.location.reload();
-    }, 2000);
+      // Forçar recarga total ignorando cache (cache-busting)
+      window.location.href = window.location.origin + window.location.pathname + '?v=' + Date.now();
+    }, 2500);
   };
 
   const handleCloseUpdate = () => {
-    if (settings?.version) {
-      localStorage.setItem('last_seen_cloud_version', settings.version);
-    }
+    localStorage.setItem('last_seen_app_version', APP_VERSION);
     setShowUpdateModal(false);
   };
 
@@ -122,43 +119,43 @@ export default function App() {
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md no-print"
+              className="fixed top-0 left-0 w-full h-[100dvh] z-[100] flex flex-col items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md no-print"
             >
-              <div className="bg-white dark:bg-slate-900 w-full max-w-sm rounded-[2rem] shadow-2xl p-6 border border-sky-100 dark:border-sky-500/20 text-center relative overflow-hidden">
-                <div className="absolute top-0 right-0 p-4">
-                  <button onClick={handleCloseUpdate} className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors">
+              <div className="bg-white dark:bg-slate-900 w-full max-w-sm rounded-3xl shadow-2xl p-5 border border-sky-100 dark:border-sky-500/20 text-center relative max-h-[85vh] overflow-y-auto">
+                <div className="absolute top-0 right-0 p-3">
+                  <button onClick={handleCloseUpdate} className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors">
                     <X className="w-4 h-4 text-slate-400" />
                   </button>
                 </div>
                 
-                <div className="w-16 h-16 bg-sky-100 dark:bg-sky-500/20 text-sky-600 rounded-2xl flex items-center justify-center mx-auto mb-4 animate-pulse">
-                  <Sparkles className="w-8 h-8" />
+                <div className="w-12 h-12 bg-sky-100 dark:bg-sky-500/20 text-sky-600 rounded-2xl flex items-center justify-center mx-auto mb-3 animate-pulse">
+                  <Sparkles className="w-6 h-6" />
                 </div>
                 
-                <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-2">
+                <h2 className="text-lg font-bold text-slate-800 dark:text-white mb-1">
                   {updateStatus === 'success' ? 'Perfeito!' : 'Novidades Chegaram!'}
                 </h2>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mb-6 uppercase tracking-widest font-black">Versão {APP_VERSION}</p>
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 mb-4 uppercase tracking-widest font-black">Versão {APP_VERSION}</p>
                 
                 {updateStatus === 'success' ? (
-                  <div className="py-10 animate-bounce">
+                  <div className="py-6 animate-bounce">
                     <p className="text-sky-600 dark:text-sky-400 font-bold text-sm">Atualizações aplicadas com sucesso!</p>
                     <p className="text-[10px] text-slate-400 mt-2">Reiniciando o sistema...</p>
                   </div>
                 ) : (
                   <>
-                    <div className="text-left space-y-2 mb-8">
+                    <div className="text-left space-y-1.5 mb-5">
                       {CHANGELOG.map((item, i) => (
                         <div key={i} className="flex gap-2 items-start group">
                           <div className="w-1 h-1 rounded-full bg-sky-500 mt-1.5 shrink-0 group-hover:scale-150 transition-transform" />
-                          <span className="text-[11px] leading-tight text-slate-600 dark:text-slate-300 font-medium">{item}</span>
+                          <span className="text-[10px] leading-tight text-slate-600 dark:text-slate-300 font-medium">{item}</span>
                         </div>
                       ))}
                     </div>
 
                     <button 
                       onClick={handleUpdateClick}
-                      className="w-full py-3 bg-sky-600 text-white rounded-xl text-sm font-bold shadow-lg shadow-sky-500/30 flex items-center justify-center gap-2 hover:bg-sky-500 transition-all active:scale-95"
+                      className="w-full py-2.5 bg-sky-600 text-white rounded-xl text-xs sm:text-sm font-bold shadow-lg shadow-sky-500/30 flex items-center justify-center gap-2 hover:bg-sky-500 transition-all active:scale-95"
                     >
                       <RefreshCw className="w-4 h-4" />
                       Atualizar Agora

@@ -84,9 +84,12 @@ export default function VerificationResult({ member, status, onReset, isMyID = f
       // Allow browser engine to render the container before capture
       await new Promise(r => setTimeout(r, 1200));
 
+      const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
       const captureOptions = {
         backgroundColor: (isMyID && status === 'VALID') ? 'transparent' : (isDarkMode ? '#0f172a' : '#ffffff'),
-        pixelRatio: 3,
+        pixelRatio: (isSafari || isMobile) ? 2 : 3, // Lower for mobile/Safari to avoid memory/blank issues
         cacheBust: true,
         skipFonts: false,
         style: {
@@ -96,6 +99,9 @@ export default function VerificationResult({ member, status, onReset, isMyID = f
       };
       
       if (isMyID && status === 'VALID') {
+         // Optimization for Safari: sometimes it needs to be called twice or with a delay
+         if (isSafari) await htmlToImage.toPng(card, captureOptions); 
+         
          const imgData = await htmlToImage.toPng(card, captureOptions);
          
          if (!imgData || imgData === 'data:,') {
@@ -126,6 +132,8 @@ export default function VerificationResult({ member, status, onReset, isMyID = f
          const fileName = `Carteirinha_FAJOPA_${safeName.replace(/\s+/g, '_')}.pdf`;
          pdf.save(fileName);
       } else {
+         // Safari optimization for Jpeg capture
+         if (isSafari) await htmlToImage.toJpeg(card, captureOptions);
          const imgData = await htmlToImage.toJpeg(card, captureOptions);
          
          if (!imgData || imgData === 'data:,') {
