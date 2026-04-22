@@ -1,10 +1,13 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Download, Info, Share } from 'lucide-react';
 import { useSettings } from '../context/SettingsContext';
+import { APP_VERSION } from '../lib/constants';
 
 export default function InstallPWA() {
   const { settings } = useSettings();
   const instNameShort = settings.instName?.split(' ')[0] || 'App';
+  const isLandingMode = new URLSearchParams(window.location.search).get('install') === 'true';
   
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [showInstallBtn, setShowInstallBtn] = useState(false);
@@ -64,6 +67,79 @@ export default function InstallPWA() {
     }
     setDeferredPrompt(null);
   };
+
+  if (isLandingMode && !window.matchMedia('(display-mode: standalone)').matches && !isInstalled) {
+    return createPortal(
+      <div className="fixed inset-0 z-[200] bg-slate-900 flex items-center justify-center p-4 sm:p-6 animated-fade-in overflow-y-auto">
+        <div className="w-full max-w-md bg-white dark:bg-slate-800 rounded-[2.5rem] shadow-2xl p-8 text-center border border-sky-100 dark:border-sky-500/20 my-auto">
+          <div className="w-20 h-20 bg-sky-500 rounded-3xl mx-auto mb-6 shadow-xl shadow-sky-500/30 flex items-center justify-center rotate-3">
+             <Download className="w-10 h-10 text-white" />
+          </div>
+          <h2 className="text-2xl font-black text-slate-800 dark:text-white mb-2">Instalar Aplicativo</h2>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mb-8 uppercase tracking-widest font-bold">DAVVERO-ID v{APP_VERSION}</p>
+          
+          <div className="space-y-4 mb-8">
+            {showInstallBtn ? (
+              <button 
+                onClick={handleInstallClick}
+                className="w-full py-4 bg-sky-600 text-white rounded-2xl text-base font-bold shadow-xl shadow-sky-600/30 hover:bg-sky-500 transition-all hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-3"
+              >
+                <Download className="w-5 h-5" />
+                INSTALAR AGORA
+              </button>
+            ) : platform === 'ios' ? (
+              <div className="bg-sky-50 dark:bg-sky-900/40 p-5 rounded-2xl border border-sky-200 dark:border-sky-500/30 text-left">
+                <p className="text-sm font-bold text-sky-800 dark:text-sky-300 mb-2 flex items-center gap-2">
+                  <span className="bg-white dark:bg-sky-600 w-6 h-6 rounded-full flex items-center justify-center text-[10px]">1</span> 
+                  Instalar no iPhone (Safari)
+                </p>
+                <p className="text-xs text-sky-700 dark:text-sky-400 leading-relaxed font-medium">
+                  Toque no ícone de <strong>Compartilhar</strong> (quadrado com seta pra cima) e escolha <strong>"Adicionar à Tela de Início"</strong>.
+                </p>
+              </div>
+            ) : platform === 'samsung' ? (
+              <div className="bg-sky-50 dark:bg-sky-900/40 p-5 rounded-2xl border border-sky-200 dark:border-sky-500/30 text-left">
+                <p className="text-sm font-bold text-sky-800 dark:text-sky-300 mb-2 flex items-center gap-2">
+                  <span className="bg-white dark:bg-sky-600 w-6 h-6 rounded-full flex items-center justify-center text-[10px]">1</span> 
+                  Samsung Internet
+                </p>
+                <p className="text-xs text-sky-700 dark:text-sky-400 leading-relaxed font-medium">
+                  Toque no ícone <strong>+</strong> na barra de endereços ou no menu <strong>≡</strong> e escolha <strong>Adicionar página a... → Tela inicial</strong>.
+                </p>
+              </div>
+            ) : (
+              <div className="bg-slate-50 dark:bg-slate-900/60 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 text-left">
+                <p className="text-sm font-bold text-slate-800 dark:text-slate-200 mb-2 flex items-center gap-2">
+                  <span className="bg-white dark:bg-slate-700 w-6 h-6 rounded-full flex items-center justify-center text-[10px]">!</span> 
+                  Instalação Manual
+                </p>
+                <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed font-medium">
+                  Abra o menu do seu navegador (⋮ ou ≡) e selecione <strong>"Instalar aplicativo"</strong> ou <strong>"Adicionar à tela de início"</strong>.
+                </p>
+              </div>
+            )}
+            
+            <button 
+              onClick={() => {
+                const url = new URL(window.location.href);
+                url.searchParams.delete('install');
+                window.history.replaceState({}, '', url);
+                window.location.reload();
+              }}
+              className="w-full py-3 text-slate-400 dark:text-slate-500 text-xs font-bold uppercase tracking-widest hover:text-sky-500 transition-colors"
+            >
+              Continuar para o site sem instalar
+            </button>
+          </div>
+          
+          <div className="pt-6 border-t border-slate-100 dark:border-slate-700">
+             <p className="text-[10px] text-slate-400 font-medium">A instalação melhora a performance e permite o uso offline da sua ID Digital.</p>
+          </div>
+        </div>
+      </div>,
+      document.body
+    );
+  }
 
   if (isInIframe && !isInstalled) {
     return (

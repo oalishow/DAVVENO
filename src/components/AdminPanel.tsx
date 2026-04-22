@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Settings, UserPlus, Database, Trash2, Bell, Printer, Loader2, Users, UserCheck, UserX, Clock, Image as ImageIcon, Mail, LogOut } from 'lucide-react';
+import { Settings, UserPlus, Database, Trash2, Bell, Printer, Loader2, Users, UserCheck, UserX, Clock, Image as ImageIcon, Mail, LogOut, Share2, Check } from 'lucide-react';
 import { doc, updateDoc, collection, addDoc, query, getDocs, onSnapshot, where, Timestamp } from 'firebase/firestore';
 import { db, appId, auth } from '../lib/firebase';
 import { signOut } from 'firebase/auth';
@@ -449,6 +449,31 @@ export default function AdminPanel({ onLogout }: { onLogout: () => void }) {
                 </span>
               )}
             </button>
+          </div>
+
+          <div className="bg-gradient-to-br from-sky-500/10 to-blue-500/10 border border-sky-200 dark:border-sky-500/20 p-4 rounded-2xl mb-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+             <div className="flex items-center gap-3">
+               <div className="w-10 h-10 bg-sky-500 rounded-xl flex items-center justify-center text-white shadow-lg shadow-sky-500/30">
+                 <Share2 className="w-5 h-5" />
+               </div>
+               <div>
+                  <h4 className="text-sm font-bold text-slate-800 dark:text-sky-200">Link de Instalação Inteligente</h4>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">Envie este link para que os membros instalem o app automaticamente.</p>
+               </div>
+             </div>
+             <button 
+               onClick={() => {
+                 const url = new URL(window.location.origin);
+                 url.searchParams.set('install', 'true');
+                 navigator.clipboard.writeText(url.toString());
+                 setStatus({ msg: 'Link de instalação copiado!', type: 'success' });
+                 setTimeout(() => setStatus(null), 3000);
+               }}
+               className="bg-white dark:bg-slate-800 text-sky-600 dark:text-sky-400 px-5 py-2.5 rounded-xl text-xs font-bold shadow-sm border border-sky-100 dark:border-sky-500/30 hover:bg-sky-50 dark:hover:bg-slate-700 transition-all flex items-center gap-2 group"
+             >
+               {status?.msg === 'Link de instalação copiado!' ? <Check className="w-4 h-4 text-emerald-500" /> : <Share2 className="w-4 h-4 group-hover:scale-110 transition-transform" />}
+               Copiar Link de Convite
+             </button>
           </div>
         </div>
 
