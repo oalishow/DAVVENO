@@ -8,16 +8,25 @@ interface ChangelogModalProps {
 export default function ChangelogModal({ onClose }: ChangelogModalProps) {
   const versions = [
     {
-      version: 'v4.0.0',
-      title: 'A vero ID - Nova Identidade',
+      version: 'v4.1.0',
+      title: 'Identidade FAJOPA & Dupla Assinatura',
       changes: [
-        'Novo Nome: Transição oficial para "A vero ID".',
+        'Dupla Assinatura: Verso da carteirinha agora suporta Diretor e Reitor simultaneamente.',
+        'Customização Total: Ajuste independente de escala para cada assinatura digital.',
+        'Branding FAJOPA: Atualização completa do nome da instituição e ícones de instalação.',
+        'Layout Otimizado: Reposicionamento de textos e ampliação da área de assinaturas.'
+      ],
+      current: true
+    },
+    {
+      version: 'v4.0.0',
+      title: 'Nova Identidade Visual',
+      changes: [
         'Novo Logotipo: Ícones e manifestos atualizados com a nova marca.',
         'Notificações no Windows: Suporte completo a notificações nativas para novos pedidos.',
         'Segurança Admin: Login por e-mail agora exige confirmação por Senha Mestra.',
         'Simplificação Pública: Removida a exigência de senha mestra para pedidos de alunos.'
-      ],
-      current: true
+      ]
     },
     {
       version: 'v3.0.0',

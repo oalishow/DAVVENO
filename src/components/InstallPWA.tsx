@@ -1,7 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Download, Info, Share } from 'lucide-react';
+import { useSettings } from '../context/SettingsContext';
 
 export default function InstallPWA() {
+  const { settings } = useSettings();
+  const instNameShort = settings.instName?.split(' ')[0] || 'App';
+  
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [showInstallBtn, setShowInstallBtn] = useState(false);
   const [platform, setPlatform] = useState<'android' | 'ios' | 'desktop' | 'other'>('other');

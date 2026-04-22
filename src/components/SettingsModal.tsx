@@ -79,6 +79,8 @@ export default function SettingsModal({ onClose }: { onClose: () => void }) {
   const [customDioceses, setCustomDioceses] = useState<string[]>(cloudSettings.customDioceses || []);
   const [customCourses, setCustomCourses] = useState<string[]>(cloudSettings.customCourses || []);
   const [customRoles, setCustomRoles] = useState<string[]>(cloudSettings.customRoles || []);
+  const [databaseName, setDatabaseName] = useState(cloudSettings.databaseName || '');
+  const [activeTab, setActiveTab] = useState<'visual' | 'content' | 'database'>('visual');
   
   const [password, setPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -126,7 +128,8 @@ export default function SettingsModal({ onClose }: { onClose: () => void }) {
         visibleFields,
         customDioceses,
         customCourses,
-        customRoles
+        customRoles,
+        databaseName
       });
 
       // Legacy fallback
@@ -322,369 +325,158 @@ export default function SettingsModal({ onClose }: { onClose: () => void }) {
            <p className="text-[9px] font-bold text-slate-500 dark:text-slate-400 mt-3 uppercase tracking-widest opacity-60">Pré-visualização em Tempo Real</p>
         </div>
 
+        {/* Tab Navigation */}
+        <div className="flex border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 shrink-0 overflow-x-auto scrollbar-hide">
+           {[
+             { id: 'visual', label: 'Identidade Visual', icon: Palette },
+             { id: 'content', label: 'Campos e Textos', icon: FileText },
+             { id: 'database', label: 'Banco de Dados', icon: Link }
+           ].map(tab => (
+             <button
+               key={tab.id}
+               onClick={() => setActiveTab(tab.id as any)}
+               className={`flex items-center gap-2 px-4 py-3 text-[10px] sm:text-xs font-bold uppercase tracking-widest border-b-2 transition-all whitespace-nowrap ${
+                 activeTab === tab.id 
+                   ? 'border-sky-500 text-sky-600' 
+                   : 'border-transparent text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+               }`}
+             >
+               <tab.icon className="w-3.5 h-3.5" />
+               {tab.label}
+             </button>
+           ))}
+        </div>
+
         <div className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-8 scrollbar-hide">
           {status && (
             <div className={`p-3 text-center rounded-xl text-sm font-medium ${status.type === 'success' ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
               {status.msg}
             </div>
           )}
-          {/* Identidade Visual */}
-          <div className="bg-sky-50/50 dark:bg-sky-900/10 p-5 rounded-2xl border border-sky-100 dark:border-sky-500/20">
-            <h3 className="text-sm font-bold flex items-center gap-2 mb-4 text-sky-800 dark:text-sky-300 uppercase tracking-widest text-[10px]">
-              <Palette className="w-4 h-4" /> Identidade Visual (Global)
-            </h3>
-            
-            <div className="grid grid-cols-1 gap-4">
-              <div className="flex flex-col items-center justify-center p-4 bg-white dark:bg-slate-800 rounded-xl border border-dashed border-slate-300 dark:border-slate-600">
-                <label className="text-[10px] font-bold text-slate-400 uppercase mb-3 text-center">Logo Principal (Header)</label>
+
+          {activeTab === 'visual' && (
+            <div className="space-y-8 animate-in fade-in transition-all duration-300">
+              {/* Identidade Visual */}
+              <div className="bg-sky-50/50 dark:bg-sky-900/10 p-5 rounded-2xl border border-sky-100 dark:border-sky-500/20">
+                <h3 className="text-sm font-bold flex items-center gap-2 mb-4 text-sky-800 dark:text-sky-300 uppercase tracking-widest text-[10px]">
+                  <Palette className="w-4 h-4" /> Branding Principal
+                </h3>
                 
-                {instLogo ? (
-                  <div className="relative group">
-                    <img src={instLogo} alt="Logo Inst" className="h-16 w-auto object-contain mb-2 rounded shadow-sm" />
-                    <button 
-                      onClick={() => setInstLogo(null)}
-                      className="absolute -top-2 -right-2 p-1 bg-rose-500 text-white rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      <Trash2 className="w-3 h-3" />
-                    </button>
-                  </div>
-                ) : (
-                  <button 
-                    onClick={() => logoInputRef.current?.click()}
-                    className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-400 hover:text-sky-500 hover:bg-sky-50 transition-all border border-slate-200 dark:border-slate-600 mb-2"
-                  >
-                    <Upload className="w-5 h-5" />
-                  </button>
-                )}
-                <input type="file" ref={logoInputRef} onChange={(e) => handleFileUpload(e, setInstLogo)} accept="image/*" className="hidden" />
-                <p className="text-[9px] text-slate-400 mt-1">Logo usada no cabeçalho e landing</p>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="col-span-2">
-                   <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Nome Institucional</label>
-                   <input type="text" value={instName} onChange={e=>setInstName(e.target.value.toUpperCase())} className="input-modern w-full rounded-xl py-2 px-3 text-xs font-bold" placeholder="Ex: FAJOPA" />
-                </div>
-                
-                <div className="col-span-2 relative">
-                   <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Descrição do Cabeçalho</label>
-                   <div className="relative">
-                      <FileText className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                      <input type="text" value={instDescription} onChange={e=>setInstDescription(e.target.value.toUpperCase())} className="input-modern w-full rounded-xl py-2 pl-9 pr-3 text-[10px] font-medium" placeholder="Ex: SISTEMA DE VERIFICAÇÃO" />
-                   </div>
-                </div>
-
-                <div className="col-span-1">
-                   <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Cor Primária</label>
-                   <div className="flex gap-2">
-                     <input type="color" value={instColor} onChange={e=>setInstColor(e.target.value)} className="w-8 h-8 rounded border-none cursor-pointer p-0" />
-                     <input type="text" value={instColor} onChange={e=>setInstColor(e.target.value)} className="input-modern flex-1 rounded-xl py-1 px-3 text-[10px] uppercase font-mono" />
-                   </div>
-                </div>
-
-                <div className="col-span-1 flex items-end">
-                  <button 
-                    onClick={handleMagicPalette}
-                    disabled={isAnalyzing}
-                    className="w-full py-2 bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded-xl text-[10px] font-bold flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/20 active:scale-95 transition-all disabled:opacity-50"
-                  >
-                    {isAnalyzing ? <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Wand2 className="w-3 h-3" />}
-                    Explorar Paletas (IA)
-                  </button>
-                </div>
-              </div>
-
-              {/* AI Palette Suggestions */}
-              {aiPalettes.length > 0 && (
-                <div className="mt-4 p-4 bg-slate-100 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 animate-in fade-in slide-in-from-top-2">
-                   <div className="flex items-center justify-between mb-3">
-                      <span className="text-[10px] font-bold text-slate-500 uppercase flex items-center gap-2">
-                        <Wand2 className="w-3 h-3 text-violet-500" /> Paletas Sugeridas
-                      </span>
-                      <button onClick={() => setAiPalettes([])} className="text-[9px] font-bold text-slate-400 hover:text-rose-500">Limpar</button>
-                   </div>
-                   <div className="space-y-3">
-                      {aiPalettes.map((p, idx) => (
-                        <div 
-                          key={idx} 
-                          onClick={() => {
-                            setInstColor(p.primary);
-                            showStatus(`Aplicada a paleta: ${p.name}`, 'success');
-                          }}
-                          className="group p-3 bg-white dark:bg-slate-700 rounded-lg border border-slate-200 dark:border-slate-600 hover:border-violet-500 cursor-pointer transition-all active:scale-[0.98]"
+                <div className="grid grid-cols-1 gap-4">
+                  <div className="flex flex-col items-center justify-center p-4 bg-white dark:bg-slate-800 rounded-xl border border-dashed border-slate-300 dark:border-slate-600">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase mb-3 text-center">Logo da Instituição</label>
+                    
+                    {instLogo ? (
+                      <div className="relative group">
+                        <img src={instLogo} alt="Logo Inst" className="h-16 w-auto object-contain mb-2 rounded shadow-sm" />
+                        <button 
+                          onClick={() => setInstLogo(null)}
+                          className="absolute -top-2 -right-2 p-1 bg-rose-500 text-white rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
                         >
-                          <div className="flex items-center justify-between mb-2">
-                             <span className="text-xs font-bold text-slate-700 dark:text-slate-200">{p.name}</span>
-                             <div className="flex gap-1">
-                                <div className="w-3 h-3 rounded-full shadow-sm" style={{ backgroundColor: p.primary }} />
-                                <div className="w-3 h-3 rounded-full shadow-sm" style={{ backgroundColor: p.secondary }} />
-                                <div className="w-3 h-3 rounded-full shadow-sm" style={{ backgroundColor: p.accent }} />
-                             </div>
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ) : (
+                      <button 
+                        onClick={() => logoInputRef.current?.click()}
+                        className="w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-400 hover:text-sky-500 hover:bg-sky-50 transition-all border border-slate-200 dark:border-slate-600 mb-2"
+                      >
+                        <Upload className="w-5 h-5" />
+                      </button>
+                    )}
+                    <input type="file" ref={logoInputRef} onChange={(e) => handleFileUpload(e, setInstLogo)} accept="image/*" className="hidden" />
+                    <p className="text-[9px] text-slate-400 mt-1">Logo usada no cabeçalho e landing</p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="col-span-2">
+                       <label className="flex items-center justify-between text-[10px] font-bold text-slate-500 uppercase mb-1">
+                          Nome Institucional
+                          <button 
+                            onClick={() => setInstName('DAVVERO-ID')}
+                            className="bg-slate-200 dark:bg-slate-800 hover:bg-sky-500 hover:text-white px-2 py-0.5 rounded text-[8px] transition-colors"
+                          >
+                            Usar Nome do Programa
+                          </button>
+                       </label>
+                       <input type="text" value={instName} onChange={e=>setInstName(e.target.value.toUpperCase())} className="input-modern w-full rounded-xl py-2 px-3 text-xs font-bold" placeholder="Ex: FAJOPA" />
+                    </div>
+                    
+                    <div className="col-span-2 relative">
+                       <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Descrição do Cabeçalho</label>
+                       <div className="relative">
+                          <FileText className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                          <input type="text" value={instDescription} onChange={e=>setInstDescription(e.target.value.toUpperCase())} className="input-modern w-full rounded-xl py-2 pl-9 pr-3 text-[10px] font-medium" placeholder="Ex: SISTEMA DE VERIFICAÇÃO" />
+                       </div>
+                    </div>
+
+                    <div className="col-span-1">
+                       <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Cor Primária</label>
+                       <div className="flex gap-2">
+                         <input type="color" value={instColor} onChange={e=>setInstColor(e.target.value)} className="w-8 h-8 rounded border-none cursor-pointer p-0" />
+                         <input type="text" value={instColor} onChange={e=>setInstColor(e.target.value)} className="input-modern flex-1 rounded-xl py-1 px-3 text-[10px] uppercase font-mono" />
+                       </div>
+                    </div>
+
+                    <div className="col-span-1 flex items-end">
+                      <button 
+                        onClick={handleMagicPalette}
+                        disabled={isAnalyzing}
+                        className="w-full py-2 bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded-xl text-[10px] font-bold flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/20 active:scale-95 transition-all disabled:opacity-50"
+                      >
+                        {isAnalyzing ? <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Wand2 className="w-3 h-3" />}
+                        IA Paletas
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Branding da Carteirinha */}
+              <div className="bg-amber-50/50 dark:bg-amber-900/10 p-5 rounded-2xl border border-amber-100 dark:border-amber-500/20">
+                <h3 className="text-sm font-bold flex items-center gap-2 mb-4 text-amber-800 dark:text-amber-300 uppercase tracking-widest text-[10px]">
+                  <ImageIcon className="w-4 h-4" /> Layout do Cartão
+                </h3>
+
+                <div className="space-y-6">
+                  {/* Parte da Frente */}
+                  <div className="space-y-3 p-3 bg-white dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
+                    <label className="text-[10px] font-black text-amber-600 uppercase flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-amber-500" /> Frente do Cartão
+                    </label>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="flex flex-col items-center justify-center p-3 border border-dashed border-slate-300 dark:border-slate-600 rounded-lg">
+                        <span className="text-[9px] font-bold text-slate-400 uppercase mb-2">Logo Frontal</span>
+                        {cardLogo ? (
+                          <div className="relative group">
+                            <img src={cardLogo} alt="Front Logo" className="h-10 w-auto object-contain mb-1 rounded" />
+                            <button onClick={() => setCardLogo(null)} className="absolute -top-2 -right-2 p-1 bg-rose-500 text-white rounded-full transition-transform group-hover:scale-110 shadow-lg"><Trash2 className="w-2 h-2" /></button>
                           </div>
-                          <p className="text-[9px] text-slate-500 dark:text-slate-400 leading-tight">{p.description}</p>
+                        ) : (
+                          <button onClick={() => cardLogoInputRef.current?.click()} className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-400 hover:text-amber-500"><Upload className="w-4 h-4" /></button>
+                        )}
+                        <input type="file" ref={cardLogoInputRef} onChange={(e) => handleFileUpload(e, setCardLogo)} accept="image/*" className="hidden" />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="block text-[8px] font-bold text-slate-400 uppercase">Ajustes Rápidos</label>
+                        <div className="grid grid-cols-1 gap-2">
+                           <input type="range" min="-50" max="50" value={frontLogoConfig.y} onChange={e=>setFrontLogoConfig({...frontLogoConfig, y: Number(e.target.value)})} className="w-full accent-amber-500 h-1 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer" />
+                           <input type="range" min="50" max="200" value={frontLogoConfig.scale} onChange={e=>setFrontLogoConfig({...frontLogoConfig, scale: Number(e.target.value)})} className="w-full accent-amber-500 h-1 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer" />
                         </div>
-                      ))}
-                   </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              )}
+              </div>
             </div>
-          </div>
-          {/* Branding da Carteirinha */}
-          <div className="bg-amber-50/50 dark:bg-amber-900/10 p-5 rounded-2xl border border-amber-100 dark:border-amber-500/20">
-            <h3 className="text-sm font-bold flex items-center gap-2 mb-4 text-amber-800 dark:text-amber-300 uppercase tracking-widest text-[10px]">
-              <ImageIcon className="w-4 h-4" /> Layout e Branding do Cartão
-            </h3>
+          )}
 
-            <div className="space-y-6">
-              {/* Parte da Frente */}
-              <div className="space-y-3 p-3 bg-white dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
-                <label className="text-[10px] font-black text-amber-600 uppercase flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-amber-500" /> Frente do Cartão
-                </label>
-                
-                <div className="flex flex-col items-center justify-center p-3 border border-dashed border-slate-300 dark:border-slate-600 rounded-lg">
-                  <span className="text-[9px] font-bold text-slate-400 uppercase mb-2">Logo Frontal</span>
-                  {cardLogo ? (
-                    <div className="relative group">
-                      <img src={cardLogo} alt="Front Logo" className="h-10 w-auto object-contain mb-1 rounded" />
-                      <button onClick={() => setCardLogo(null)} className="absolute -top-2 -right-2 p-1 bg-rose-500 text-white rounded-full"><Trash2 className="w-2 h-2" /></button>
-                    </div>
-                  ) : (
-                    <button onClick={() => cardLogoInputRef.current?.click()} className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-400 group-hover:text-amber-500"><Upload className="w-4 h-4" /></button>
-                  )}
-                  <input type="file" ref={cardLogoInputRef} onChange={(e) => handleFileUpload(e, setCardLogo)} accept="image/*" className="hidden" />
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="col-span-1">
-                    <label className="block text-[8px] font-bold text-slate-400 uppercase">Redimensionar Logo (%)</label>
-                    <div className="flex items-center gap-2">
-                      <input 
-                        type="range" 
-                        min="20" 
-                        max="200" 
-                        step="1"
-                        value={frontLogoConfig.scale} 
-                        onChange={e=>setFrontLogoConfig({...frontLogoConfig, scale: Number(e.target.value)})} 
-                        className="flex-1 accent-amber-500 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer" 
-                      />
-                      <span className="text-[10px] font-mono font-bold text-slate-500 w-8">{frontLogoConfig.scale}%</span>
-                    </div>
-                  </div>
-                  <div className="col-span-1">
-                    <label className="block text-[8px] font-bold text-slate-400 uppercase">Deslocamento X</label>
-                    <input 
-                      type="range" 
-                      min="-150" 
-                      max="150" 
-                      value={frontLogoConfig.x} 
-                      onChange={e=>setFrontLogoConfig({...frontLogoConfig, x: Number(e.target.value)})} 
-                      className="w-full accent-amber-500 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer" 
-                    />
-                  </div>
-                  <div className="col-span-1">
-                    <label className="block text-[8px] font-bold text-slate-400 uppercase">Deslocamento Y</label>
-                    <input 
-                      type="range" 
-                      min="-150" 
-                      max="150" 
-                      value={frontLogoConfig.y} 
-                      onChange={e=>setFrontLogoConfig({...frontLogoConfig, y: Number(e.target.value)})} 
-                      className="w-full accent-amber-500 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer" 
-                    />
-                  </div>
-                  <div className="col-span-1 flex items-end">
-                    <button 
-                      onClick={() => setFrontLogoConfig(DEFAULT_CONFIG)}
-                      className="text-[9px] font-bold text-slate-400 hover:text-amber-500 flex items-center gap-1 transition-colors uppercase"
-                    >
-                      <RotateCw className="w-3 h-3" /> Resetar Ajustes
-                    </button>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-[9px] font-bold text-slate-500 uppercase mb-1">Texto de Marca (Frente)</label>
-                  <input type="text" value={cardFrontText} onChange={e=>setCardFrontText(e.target.value.toUpperCase())} className="input-modern w-full rounded-lg py-1.5 px-3 text-[10px] font-bold" placeholder="VERO ID (Padrão)" />
-                </div>
-              </div>
-
-              {/* Parte de Trás */}
-              <div className="space-y-3 p-3 bg-white dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
-                <label className="text-[10px] font-black text-blue-600 uppercase flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-blue-500" /> Verso do Cartão
-                </label>
-                
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="flex flex-col items-center justify-center p-3 border border-dashed border-slate-300 dark:border-slate-600 rounded-lg">
-                    <span className="text-[9px] font-bold text-slate-400 uppercase mb-2">Logo Verso</span>
-                    {cardBackLogo ? (
-                      <div className="relative group">
-                        <img src={cardBackLogo} alt="Back Logo" className="h-10 w-auto object-contain mb-1 rounded" />
-                        <button onClick={() => setCardBackLogo(null)} className="absolute -top-2 -right-2 p-1 bg-rose-500 text-white rounded-full"><Trash2 className="w-2 h-2" /></button>
-                      </div>
-                    ) : (
-                      <button onClick={() => cardBackLogoInputRef.current?.click()} className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-400"><Upload className="w-4 h-4" /></button>
-                    )}
-                    <input type="file" ref={cardBackLogoInputRef} onChange={(e) => handleFileUpload(e, setCardBackLogo)} accept="image/*" className="hidden" />
-                  </div>
-
-                  <div className="flex flex-col items-center justify-center p-3 border border-dashed border-slate-300 dark:border-slate-600 rounded-lg">
-                    <span className="text-[9px] font-bold text-slate-400 uppercase mb-2">Fundo Verso</span>
-                    {cardBackImage ? (
-                      <div className="relative group">
-                        <img src={cardBackImage} alt="Back BG" className="h-10 w-auto object-contain mb-1 rounded" />
-                        <button onClick={() => setCardBackImage(null)} className="absolute -top-2 -right-2 p-1 bg-rose-500 text-white rounded-full"><Trash2 className="w-2 h-2" /></button>
-                      </div>
-                    ) : (
-                      <button onClick={() => cardBackInputRef.current?.click()} className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-400"><ImageIcon className="w-4 h-4" /></button>
-                    )}
-                    <input type="file" ref={cardBackInputRef} onChange={(e) => handleFileUpload(e, setCardBackImage, 1024)} accept="image/*" className="hidden" />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="col-span-1">
-                    <label className="block text-[8px] font-bold text-slate-400 uppercase">Redimensionar Logo (%)</label>
-                    <div className="flex items-center gap-2">
-                      <input 
-                        type="range" 
-                        min="20" 
-                        max="200" 
-                        step="1"
-                        value={backLogoConfig.scale} 
-                        onChange={e=>setBackLogoConfig({...backLogoConfig, scale: Number(e.target.value)})} 
-                        className="flex-1 accent-blue-500 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer" 
-                      />
-                      <span className="text-[10px] font-mono font-bold text-slate-500 w-8">{backLogoConfig.scale}%</span>
-                    </div>
-                  </div>
-                  <div className="col-span-1">
-                    <label className="block text-[8px] font-bold text-slate-400 uppercase">Deslocamento X</label>
-                    <input 
-                      type="range" 
-                      min="-150" 
-                      max="150" 
-                      value={backLogoConfig.x} 
-                      onChange={e=>setBackLogoConfig({...backLogoConfig, x: Number(e.target.value)})} 
-                      className="w-full accent-blue-500 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer" 
-                    />
-                  </div>
-                  <div className="col-span-1">
-                    <label className="block text-[8px] font-bold text-slate-400 uppercase">Deslocamento Y</label>
-                    <input 
-                      type="range" 
-                      min="-150" 
-                      max="150" 
-                      value={backLogoConfig.y} 
-                      onChange={e=>setBackLogoConfig({...backLogoConfig, y: Number(e.target.value)})} 
-                      className="w-full accent-blue-500 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer" 
-                    />
-                  </div>
-                  <div className="col-span-1 flex items-end">
-                    <button 
-                      onClick={() => setBackLogoConfig(DEFAULT_CONFIG)}
-                      className="text-[9px] font-bold text-slate-400 hover:text-blue-500 flex items-center gap-1 transition-colors uppercase"
-                    >
-                      <RotateCw className="w-3 h-3" /> Resetar Ajustes
-                    </button>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-[9px] font-bold text-slate-500 uppercase mb-1">Texto de Marca (Verso)</label>
-                  <input type="text" value={cardBackText} onChange={e=>setCardBackText(e.target.value.toUpperCase())} className="input-modern w-full rounded-lg py-1.5 px-3 text-[10px] font-bold" placeholder="VERO ID (Padrão)" />
-                </div>
-              </div>
-
-              <div>
-                 <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Notas/Rodapé do Cartão</label>
-                 <textarea 
-                    value={cardDescription} 
-                    onChange={e=>setCardDescription(e.target.value.toUpperCase())} 
-                    className="input-modern w-full rounded-xl py-2 px-3 text-[10px] font-medium min-h-[60px]" 
-                    placeholder="Ex: Documento padronizado nacionalmente conforme a lei 12.933/2013..."
-                 />
-              </div>
-
-              {/* Gerenciamento de Listas */}
-              <div className="bg-white dark:bg-slate-800/50 p-4 rounded-xl border border-slate-200 dark:border-slate-700 space-y-4 mb-4">
-                 <label className="text-[10px] font-black text-slate-500 uppercase flex items-center gap-2">
-                   <div className="w-2 h-2 rounded-full bg-indigo-400" /> Gerenciar Listas Personalizadas
-                 </label>
-                 
-                 <div className="space-y-3">
-                   <div>
-                     <label className="text-[9px] font-bold text-slate-400 uppercase mb-1 block">Dioceses Adicionais</label>
-                     <div className="flex flex-wrap gap-2 mb-2">
-                       {customDioceses.map(d => (
-                         <span key={d} className="bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 text-[10px] font-bold px-2 py-1 rounded flex items-center gap-1 group">
-                           {d}
-                           <button onClick={() => setCustomDioceses(prev => prev.filter(item => item !== d))} className="hover:text-rose-500"><X className="w-3 h-3" /></button>
-                         </span>
-                       ))}
-                     </div>
-                     <div className="flex gap-2">
-                       <input id="new-diocese" type="text" placeholder="Nova Diocese" className="input-modern flex-1 rounded-lg py-1.5 px-3 text-xs" onKeyDown={(e) => {
-                         if (e.key === 'Enter') {
-                           const val = (e.target as HTMLInputElement).value.trim().toUpperCase();
-                           if (val && !customDioceses.includes(val)) {
-                             setCustomDioceses([...customDioceses, val]);
-                             (e.target as HTMLInputElement).value = '';
-                           }
-                         }
-                       }} />
-                     </div>
-                   </div>
-
-                   <div>
-                     <label className="text-[9px] font-bold text-slate-400 uppercase mb-1 block">Cursos Adicionais</label>
-                     <div className="flex flex-wrap gap-2 mb-2">
-                       {customCourses.map(c => (
-                         <span key={c} className="bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold px-2 py-1 rounded flex items-center gap-1">
-                           {c}
-                           <button onClick={() => setCustomCourses(prev => prev.filter(item => item !== c))} className="hover:text-rose-500"><X className="w-3 h-3" /></button>
-                         </span>
-                       ))}
-                     </div>
-                     <input type="text" placeholder="Novo Curso" className="input-modern w-full rounded-lg py-1.5 px-3 text-xs" onKeyDown={(e) => {
-                       if (e.key === 'Enter') {
-                         const val = (e.target as HTMLInputElement).value.trim().toUpperCase();
-                         if (val && !customCourses.includes(val)) {
-                           setCustomCourses([...customCourses, val]);
-                           (e.target as HTMLInputElement).value = '';
-                         }
-                       }
-                     }} />
-                   </div>
-
-                   <div>
-                     <label className="text-[9px] font-bold text-slate-400 uppercase mb-1 block">Vínculos Adicionais</label>
-                     <div className="flex flex-wrap gap-2 mb-2">
-                       {customRoles.map(r => (
-                         <span key={r} className="bg-amber-50 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400 text-[10px] font-bold px-2 py-1 rounded flex items-center gap-1">
-                           {r}
-                           <button onClick={() => setCustomRoles(prev => prev.filter(item => item !== r))} className="hover:text-rose-500"><X className="w-3 h-3" /></button>
-                         </span>
-                       ))}
-                     </div>
-                     <input type="text" placeholder="Novo Vínculo" className="input-modern w-full rounded-lg py-1.5 px-3 text-xs" onKeyDown={(e) => {
-                       if (e.key === 'Enter') {
-                         const val = (e.target as HTMLInputElement).value.trim().toUpperCase();
-                         if (val && !customRoles.includes(val)) {
-                           setCustomRoles([...customRoles, val]);
-                           (e.target as HTMLInputElement).value = '';
-                         }
-                       }
-                     }} />
-                   </div>
-                 </div>
-              </div>
-
+          {activeTab === 'content' && (
+            <div className="space-y-8 animate-in fade-in transition-all duration-300">
               {/* Visibilidade de Campos */}
               <div className="bg-white dark:bg-slate-800/50 p-4 rounded-xl border border-slate-200 dark:border-slate-700">
                 <label className="text-[10px] font-black text-slate-500 uppercase flex items-center gap-2 mb-3">
-                  <div className="w-2 h-2 rounded-full bg-slate-400" /> Visibilidade de Campos
+                  <div className="w-2 h-2 rounded-full bg-slate-400" /> Exibição de Dados
                 </label>
                 <div className="grid grid-cols-2 gap-2">
                   {[
@@ -701,7 +493,7 @@ export default function SettingsModal({ onClose }: { onClose: () => void }) {
                     { id: 'rectorSignature', label: 'Assin. Reitor' },
                     { id: 'director', label: 'Nome Diretor' },
                     { id: 'rector', label: 'Nome Reitor' },
-                    { id: 'footer', label: 'Rodapé Endereço' },
+                    { id: 'footer', label: 'Rodapé Info' },
                   ].map(field => (
                     <label key={field.id} className="flex items-center gap-2 cursor-pointer group">
                       <div className="relative">
@@ -719,94 +511,157 @@ export default function SettingsModal({ onClose }: { onClose: () => void }) {
                   ))}
                 </div>
               </div>
+
+               <div className="bg-slate-50 dark:bg-slate-900/50 p-5 rounded-2xl border border-slate-200 dark:border-slate-700">
+                <h3 className="text-sm font-bold flex items-center gap-2 mb-4 text-slate-800 dark:text-slate-200 uppercase tracking-widest text-[10px]">
+                   Textos Institucionais
+                </h3>
+                <div className="space-y-4">
+                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Diretor Geral</label>
+                        <input type="text" value={directorName} onChange={e=>setDirectorName(e.target.value.toUpperCase())} className="input-modern w-full rounded-xl py-2 px-3 text-[10px] font-semibold" placeholder="NOME DO DIRETOR" />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Reitor do Seminário</label>
+                        <input type="text" value={rectorName} onChange={e=>setRectorName(e.target.value.toUpperCase())} className="input-modern w-full rounded-xl py-2 px-3 text-[10px] font-semibold" placeholder="NOME DO REITOR" />
+                      </div>
+                   </div>
+
+                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {/* Assinaturas */}
+                      <div className="p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 flex flex-col items-center">
+                        <span className="text-[9px] font-bold text-slate-400 uppercase mb-2">Assinatura Diretor</span>
+                        {instSignature ? (
+                          <div className="relative group">
+                            <img src={instSignature} alt="Assin" className="h-10 w-auto object-contain bg-white rounded p-0.5" />
+                            <button onClick={() => setInstSignature(null)} className="absolute -top-1 -right-1 p-1 bg-rose-500 text-white rounded-full shadow-lg"><Trash2 className="w-2 h-2" /></button>
+                          </div>
+                        ) : (
+                          <button onClick={() => signatureInputRef.current?.click()} className="p-2 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-400 hover:text-sky-500"><Upload className="w-4 h-4" /></button>
+                        )}
+                        <input type="file" ref={signatureInputRef} onChange={(e) => handleFileUpload(e, setInstSignature, 300)} accept="image/png" className="hidden" />
+                      </div>
+
+                      <div className="p-3 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 flex flex-col items-center">
+                        <span className="text-[9px] font-bold text-slate-400 uppercase mb-2">Assinatura Reitor</span>
+                        {rectorSignature ? (
+                           <div className="relative group">
+                             <img src={rectorSignature} alt="Assin" className="h-10 w-auto object-contain bg-white rounded p-0.5" />
+                             <button onClick={() => setRectorSignature(null)} className="absolute -top-1 -right-1 p-1 bg-rose-500 text-white rounded-full shadow-lg"><Trash2 className="w-2 h-2" /></button>
+                           </div>
+                        ) : (
+                          <button onClick={() => rectorSignatureInputRef.current?.click()} className="p-2 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-400 hover:text-sky-500"><Upload className="w-4 h-4" /></button>
+                        )}
+                        <input type="file" ref={rectorSignatureInputRef} onChange={(e) => handleFileUpload(e, setRectorSignature, 300)} accept="image/png" className="hidden" />
+                      </div>
+                   </div>
+                </div>
+              </div>
             </div>
-          </div>
+          )}
 
-          <div className="bg-slate-50 dark:bg-slate-900/50 p-5 rounded-2xl border border-slate-200 dark:border-slate-700">
-            <h3 className="text-sm font-bold flex items-center gap-2 mb-4 text-slate-800 dark:text-slate-200 uppercase tracking-widest text-[10px]">
-              <Link className="w-4 h-4" /> Configurações de Texto
-            </h3>
-            <div className="space-y-3">
-               <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">URL de Acesso</label>
-                  <input type="text" value={url} onChange={e=>setUrl(e.target.value)} className="input-modern w-full rounded-xl py-2 px-3 text-sm" placeholder="Ex: https://vero-id.app" />
-               </div>
-               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Diretor Geral (Assinante)</label>
-                    <div className="relative">
-                       <UserCircle className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                       <input type="text" value={directorName} onChange={e=>setDirectorName(e.target.value.toUpperCase())} className="input-modern w-full rounded-xl py-2 pl-9 pr-3 text-[10px] font-semibold" placeholder="DIRETOR GERAL" />
+          {activeTab === 'database' && (
+            <div className="space-y-8 animate-in fade-in transition-all duration-300">
+               {/* Banco de Dados */}
+               <div className="bg-emerald-50/50 dark:bg-emerald-900/10 p-5 rounded-2xl border border-emerald-100 dark:border-emerald-500/20">
+                 <h3 className="text-sm font-bold flex items-center gap-2 mb-4 text-emerald-800 dark:text-emerald-300 uppercase tracking-widest text-[10px]">
+                   <Link className="w-4 h-4" /> Configurações de Dados
+                 </h3>
+                 <div className="space-y-4">
+                    <div>
+                       <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Nome do Banco de Dados (Exibição no Header)</label>
+                       <input 
+                         type="text" 
+                         value={databaseName} 
+                         onChange={e=>setDatabaseName(e.target.value.toUpperCase())} 
+                         className="input-modern w-full rounded-xl py-2 px-3 text-xs font-bold" 
+                         placeholder="Ex: FAJOPA e SPSCJ" 
+                       />
+                       <p className="text-[9px] text-slate-400 mt-2 italic">Este nome aparece no cabeçalho para identificar a base de dados ativa no momento.</p>
                     </div>
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Reitor (Assinante)</label>
-                    <div className="relative">
-                       <UserCircle className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                       <input type="text" value={rectorName} onChange={e=>setRectorName(e.target.value.toUpperCase())} className="input-modern w-full rounded-xl py-2 pl-9 pr-3 text-[10px] font-semibold" placeholder="REITOR" />
+
+                    <div>
+                       <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">URL Base do Projeto</label>
+                       <input type="text" value={url} onChange={e=>setUrl(e.target.value)} className="input-modern w-full rounded-xl py-2 px-3 text-xs" placeholder="https://..." />
                     </div>
-                  </div>
+                 </div>
                </div>
 
-               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {/* Digital Signature: Director */}
-                  <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-dashed border-slate-300 dark:border-slate-600 flex flex-col items-center">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase mb-2 text-center">Assinatura Diretor (PNG)</label>
-                    {instSignature ? (
-                      <div className="relative group">
-                        <img src={instSignature} alt="Assinatura" className="h-10 w-auto object-contain mb-1 bg-white p-1 rounded" />
-                        <button onClick={() => setInstSignature(null)} className="absolute -top-2 -right-2 p-1 bg-rose-500 text-white rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"><Trash2 className="w-3 h-3" /></button>
-                      </div>
-                    ) : (
-                      <button onClick={() => signatureInputRef.current?.click()} className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-400 hover:text-sky-500 border border-slate-200 dark:border-slate-600"><Upload className="w-4 h-4" /></button>
-                    )}
-                    <input type="file" ref={signatureInputRef} onChange={(e) => handleFileUpload(e, setInstSignature, 300)} accept="image/png" className="hidden" />
-                    
-                    {instSignature && (
-                      <div className="mt-2 w-full px-2">
-                        <label className="block text-[8px] font-bold text-slate-400 uppercase mb-1">Escala ({signatureScale}%)</label>
-                        <input type="range" min="50" max="300" value={signatureScale} onChange={e=>setSignatureScale(Number(e.target.value))} className="w-full accent-sky-500 h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer" />
-                      </div>
-                    )}
-                  </div>
+               {/* Gestão de Listas */}
+               <div className="bg-white dark:bg-slate-800/50 p-5 rounded-2xl border border-slate-200 dark:border-slate-700">
+                 <h3 className="text-sm font-bold flex items-center gap-2 mb-4 text-slate-800 dark:text-slate-200 uppercase tracking-widest text-[10px]">
+                    Gerenciamento de Listas Customizadas
+                 </h3>
+                 <div className="space-y-4">
+                    {/* Dioceses */}
+                    <div className="space-y-2">
+                       <label className="block text-[10px] font-bold text-slate-500 uppercase">Dioceses ({customDioceses.length})</label>
+                       <div className="flex flex-wrap gap-2 p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl min-h-[40px]">
+                          {customDioceses.map((d, i) => (
+                            <span key={i} className="px-2 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded text-[9px] font-bold flex items-center gap-2 group">
+                              {d}
+                              <button onClick={() => setCustomDioceses(customDioceses.filter((_, idx) => idx !== i))} className="text-slate-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <X className="w-2.5 h-2.5" />
+                              </button>
+                            </span>
+                          ))}
+                       </div>
+                       <input type="text" placeholder="Adicionar Diocese + Enter" className="input-modern w-full rounded-xl py-2 px-3 text-xs" onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            const val = (e.target as HTMLInputElement).value.trim().toUpperCase();
+                            if (val && !customDioceses.includes(val)) {
+                              setCustomDioceses([...customDioceses, val]);
+                              (e.target as HTMLInputElement).value = '';
+                            }
+                          }
+                       }} />
+                    </div>
 
-                  {/* Digital Signature: Rector */}
-                  <div className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-dashed border-slate-300 dark:border-slate-600 flex flex-col items-center">
-                    <label className="text-[10px] font-bold text-slate-400 uppercase mb-2 text-center">Assinatura Reitor (PNG)</label>
-                    {rectorSignature ? (
-                      <div className="relative group">
-                        <img src={rectorSignature} alt="Assinatura Reitor" className="h-10 w-auto object-contain mb-1 bg-white p-1 rounded" />
-                        <button onClick={() => setRectorSignature(null)} className="absolute -top-2 -right-2 p-1 bg-rose-500 text-white rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"><Trash2 className="w-3 h-3" /></button>
-                      </div>
-                    ) : (
-                      <button onClick={() => rectorSignatureInputRef.current?.click()} className="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-400 hover:text-sky-500 border border-slate-200 dark:border-slate-600"><Upload className="w-4 h-4" /></button>
-                    )}
-                    <input type="file" ref={rectorSignatureInputRef} onChange={(e) => handleFileUpload(e, setRectorSignature, 300)} accept="image/png" className="hidden" />
-                    
-                    {rectorSignature && (
-                      <div className="mt-2 w-full px-2">
-                        <label className="block text-[8px] font-bold text-slate-400 uppercase mb-1">Escala ({rectorSignatureScale}%)</label>
-                        <input type="range" min="50" max="300" value={rectorSignatureScale} onChange={e=>setRectorSignatureScale(Number(e.target.value))} className="w-full accent-sky-500 h-1 bg-slate-200 rounded-lg appearance-none cursor-pointer" />
-                      </div>
-                    )}
-                  </div>
+                    {/* Cursos */}
+                    <div className="space-y-2">
+                       <label className="block text-[10px] font-bold text-slate-500 uppercase">Cursos ({customCourses.length})</label>
+                       <div className="flex flex-wrap gap-2 p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl min-h-[40px]">
+                          {customCourses.map((c, i) => (
+                            <span key={i} className="px-2 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded text-[9px] font-bold flex items-center gap-2 group">
+                              {c}
+                              <button onClick={() => setCustomCourses(customCourses.filter((_, idx) => idx !== i))} className="text-slate-300 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <X className="w-2.5 h-2.5" />
+                              </button>
+                            </span>
+                          ))}
+                       </div>
+                       <input type="text" placeholder="Adicionar Curso + Enter" className="input-modern w-full rounded-xl py-2 px-3 text-xs" onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            const val = (e.target as HTMLInputElement).value.trim().toUpperCase();
+                            if (val && !customCourses.includes(val)) {
+                              setCustomCourses([...customCourses, val]);
+                              (e.target as HTMLInputElement).value = '';
+                            }
+                          }
+                       }} />
+                    </div>
+                 </div>
                </div>
+
+               {/* Segurança */}
+               <div className="bg-rose-50 dark:bg-rose-900/10 p-5 rounded-2xl border border-rose-200 dark:border-rose-500/20">
+                <h3 className="text-sm font-bold flex items-center gap-2 mb-4 text-rose-700 dark:text-rose-300 uppercase tracking-widest text-[10px]">
+                  <ShieldAlert className="w-4 h-4" /> Senha de Administrador
+                </h3>
+                <div className="space-y-3">
+                  <input type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="Senha Atual" className="input-modern w-full rounded-xl py-2 px-3 text-sm" />
+                  <input type="password" value={newPassword} onChange={e=>setNewPassword(e.target.value)} placeholder="Nova Senha" className="input-modern w-full rounded-xl py-2 px-3 text-sm" />
+                  <button onClick={handleSavePassword} className="btn-modern w-full py-2 bg-rose-500 hover:bg-rose-600 text-white rounded-xl text-sm font-medium">Trocar Senha Local</button>
+                </div>
+              </div>
             </div>
-          </div>
+          )}
           
-          <button onClick={handleSaveGeneral} className="btn-modern w-full py-3 bg-sky-600 hover:bg-sky-500 text-white rounded-2xl text-sm font-bold shadow-lg shadow-sky-500/20 active:scale-95 transition-all">
-            Salvar Todas as Configurações
-          </button>
-
-          <div className="bg-rose-50 dark:bg-rose-900/10 p-5 rounded-2xl border border-rose-200 dark:border-rose-500/20 mt-4">
-            <h3 className="text-sm font-bold flex items-center gap-2 mb-4 text-rose-700 dark:text-rose-300 uppercase tracking-widest text-[10px]">
-              <ShieldAlert className="w-4 h-4" /> Segurança do Painel
-            </h3>
-            <div className="space-y-3">
-              <input type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="Senha Atual" className="input-modern w-full rounded-xl py-2 px-3 text-sm" />
-              <input type="password" value={newPassword} onChange={e=>setNewPassword(e.target.value)} placeholder="Nova Senha" className="input-modern w-full rounded-xl py-2 px-3 text-sm" />
-              <button onClick={handleSavePassword} className="btn-modern w-full py-2 bg-rose-500 hover:bg-rose-600 text-white rounded-xl text-sm font-medium">Alterar Credenciais</button>
-            </div>
+          <div className="pt-4 border-t border-slate-200 dark:border-slate-800">
+             <button onClick={handleSaveGeneral} className="btn-modern w-full py-3 bg-sky-600 hover:bg-sky-500 text-white rounded-2xl text-sm font-bold shadow-lg shadow-sky-500/20 active:scale-95 transition-all flex items-center justify-center gap-2">
+                <Save className="w-4 h-4" /> Salvar Todas as Configurações
+             </button>
           </div>
         </div>
       </div>

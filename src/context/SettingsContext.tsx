@@ -28,6 +28,7 @@ interface AppSettings {
   customRoles: string[];
   customCourses: string[];
   customDioceses: string[];
+  databaseName: string;
 }
 
 const DEFAULT_SETTINGS: AppSettings = {
@@ -66,10 +67,11 @@ const DEFAULT_SETTINGS: AppSettings = {
     footer: true,
     diocese: true
   },
-  version: '3.1.7',
+  version: '4.1.0',
   customRoles: [],
   customCourses: [],
-  customDioceses: []
+  customDioceses: [],
+  databaseName: 'FAJOPA e SPSCJ'
 };
 
 interface SettingsContextType {
@@ -104,12 +106,6 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
           ...data,
           visibleFields: mergedVisibleFields
         }));
-
-        // Migração automática de nome legado para o novo padrão solicitado
-        const legacyNames = ['DA VERO-ID', 'DAVVERO-ID', 'Vero ID', 'A vero ID', 'DA VERO ID'];
-        if (legacyNames.includes(data.instName)) {
-           updateSettings({ instName: 'FAJOPA e SPSCJ' }).catch(console.error);
-        }
       } else {
         setDoc(docRef, DEFAULT_SETTINGS).catch(() => {});
       }
@@ -118,7 +114,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     unsubscribes.push(unsubMain);
 
     // Listeners para Ativos Pesados individuais
-    const heavyFields = ['instLogo', 'cardLogo', 'cardBackLogo', 'cardBackImage', 'instSignature'];
+    const heavyFields = ['instLogo', 'cardLogo', 'cardBackLogo', 'cardBackImage', 'instSignature', 'rectorSignature'];
     heavyFields.forEach(field => {
       const assetRef = doc(db, ASSETS_DOC_PATH(appId, field));
       const unsubAsset = onSnapshot(assetRef, (snapshot) => {
@@ -139,7 +135,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
     const docRef = doc(db, SETTINGS_DOC_PATH(appId));
     
     // Lista de campos que são imagens pesadas
-    const heavyFields = ['instLogo', 'cardLogo', 'cardBackLogo', 'cardBackImage', 'instSignature'];
+    const heavyFields = ['instLogo', 'cardLogo', 'cardBackLogo', 'cardBackImage', 'instSignature', 'rectorSignature'];
     
     const settingsToSave = { ...newSettings };
     const assetOperations: Promise<any>[] = [];

@@ -24,13 +24,13 @@ export const INSTITUTION_DESCRIPTION_KEY = 'davveroId_institution_description';
 export const CARD_DESCRIPTION_KEY = 'davveroId_card_description';
 export const CUSTOM_ROLES_KEY = 'davveroId_custom_roles';
 export const CUSTOM_COURSES_KEY = 'davveroId_custom_courses';
-export const APP_VERSION = '4.0.0';
+export const APP_VERSION = '4.1.0';
 export const SETTINGS_DOC_PATH = (appId: string) => `artifacts/${appId}/public/data/students/_settings_global`;
 export const ASSETS_DOC_PATH = (appId: string, assetType: string) => `artifacts/${appId}/public/data/students/_asset_${assetType}`;
 export const CHANGELOG = [
-  "Novo Nome Oficial: O sistema agora chama-se 'DAVVERO-ID'.",
-  "Novo Ícone: Logotipo atualizado com a nova identidade visual.",
-  "Segurança em Camadas: Senha mestra agora obrigatória para novos administradores.",
+  "Identidade Permanente: O programa agora chama-se 'DAVVERO-ID'.",
+  "Dupla Assinatura: Suporte para assinaturas do Diretor e Reitor simultaneamente.",
+  "Gestão de Ativos: Otimização de armazenamento para assinaturas e logotipos.",
   "Notificações Onipresentes: Alertas nativos no Windows para novas solicitações (PWA).",
   "Sincronização em nuvem das configurações (Logos, Cores e Nomes)."
 ];
