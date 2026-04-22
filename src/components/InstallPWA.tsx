@@ -8,7 +8,7 @@ export default function InstallPWA() {
   
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [showInstallBtn, setShowInstallBtn] = useState(false);
-  const [platform, setPlatform] = useState<'android' | 'ios' | 'desktop' | 'other'>('other');
+  const [platform, setPlatform] = useState<'android' | 'ios' | 'desktop' | 'samsung' | 'other'>('other');
 
   const [isInstalled, setIsInstalled] = useState(false);
   const [isInIframe, setIsInIframe] = useState(false);
@@ -21,6 +21,8 @@ export default function InstallPWA() {
     const userAgent = window.navigator.userAgent.toLowerCase();
     if (/iphone|ipad|ipod/.test(userAgent)) {
       setPlatform('ios');
+    } else if (/samsungbrowser/.test(userAgent)) {
+      setPlatform('samsung');
     } else if (/android/.test(userAgent)) {
       setPlatform('android');
     } else if (/windows|macintosh|linux/.test(userAgent)) {
@@ -108,6 +110,24 @@ export default function InstallPWA() {
             <h3 className="text-sm font-bold text-sky-900 dark:text-sky-100 mb-1">Instalar no iPhone</h3>
             <p className="text-xs text-sky-700 dark:text-sky-300 leading-relaxed">
               Para instalar o <strong>DAVVERO-ID</strong>, toque no ícone de <span className="inline-block"><Share className="w-4 h-4 mx-0.5 inline" /></span> <strong>Compartilhar</strong> do seu Safari e selecione <strong>"Adicionar à Tela de Início"</strong>.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (platform === 'samsung' && !showInstallBtn && !window.matchMedia('(display-mode: standalone)').matches) {
+    return (
+      <div className="bg-sky-50 dark:bg-sky-900/20 border border-sky-100 dark:border-sky-800 p-4 rounded-2xl mt-6 no-print">
+        <div className="flex items-start gap-3">
+          <div className="p-2 bg-sky-100 dark:bg-sky-800 rounded-lg text-sky-600 dark:text-sky-300">
+            <Info className="w-5 h-5" />
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-sky-900 dark:text-sky-100 mb-1">Instalar no Samsung Internet</h3>
+            <p className="text-xs text-sky-700 dark:text-sky-300 leading-relaxed font-medium">
+              No Samsung Internet, toque no ícone de <span className="bg-slate-200 dark:bg-slate-700 px-1.5 py-0.5 rounded text-[10px] inline-block font-bold">+</span > na barra de endereços ou abra o menu (≡) → <strong>Adicionar página a</strong> → <strong>Tela inicial</strong> para instalar o DAVVERO-ID.
             </p>
           </div>
         </div>

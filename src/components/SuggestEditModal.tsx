@@ -4,6 +4,7 @@ import { X, CheckCircle, Search, Image as ImageIcon } from 'lucide-react';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db, appId } from '../lib/firebase';
 import { resizeAndConvertToBase64 } from '../lib/imageUtils';
+import { useSettings } from '../context/SettingsContext';
 import type { Member } from '../types';
 import ImageCropperModal from './ImageCropperModal';
 
@@ -14,10 +15,12 @@ interface SuggestEditModalProps {
 }
 
 export default function SuggestEditModal({ member, onClose, onSubmitSuccess }: SuggestEditModalProps) {
+  const { settings } = useSettings();
   const [name, setName] = useState(member.name || '');
   const [ra, setRa] = useState(member.ra || '');
   const [roles, setRoles] = useState<string[]>(member.roles || []);
   const [course, setCourse] = useState(member.course || '');
+  const [diocese, setDiocese] = useState(member.diocese || '');
   const [cpf, setCpf] = useState(member.cpf || '');
   const [rg, setRg] = useState(member.rg || '');
   const [birthdate, setBirthdate] = useState(() => {
@@ -38,7 +41,14 @@ export default function SuggestEditModal({ member, onClose, onSubmitSuccess }: S
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const availableRoles = ["ALUNO(A)", "PROFESSOR(A)", "COLABORADOR(A)", "SEMINARISTA", "PADRE", "DIÁCONO", "BISPO"];
+  const baseRoles = ["ALUNO(A)", "PROFESSOR(A)", "COLABORADOR(A)", "SEMINARISTA", "PADRE", "DIÁCONO", "BISPO"];
+  const availableRoles = [...baseRoles, ...settings.customRoles];
+
+  const baseCourses = ["FILOSOFIA", "FILOSOFIA EAD", "TEOLOGIA", "TEOLOGIA EAD"];
+  const availableCourses = [...baseCourses, ...settings.customCourses];
+
+  const baseDioceses = ["MARÍLIA", "ASSIS", "LINS", "BAURU", "OURINHOS", "PRESIDENTE PRUDENTE", "ARAÇATUBA", "BOTUCATU"];
+  const availableDioceses = [...baseDioceses, ...settings.customDioceses];
 
   const toggleRole = (role: string) => {
     setRoles(prev => prev.includes(role) ? prev.filter(r => r !== role) : [...prev, role]);
@@ -58,12 +68,13 @@ export default function SuggestEditModal({ member, onClose, onSubmitSuccess }: S
     const nameMatch = (name || '').trim() === (member.name || '').trim();
     const raMatch = (ra || '').trim() === (member.ra || '').trim();
     const courseMatch = (course || '') === (member.course || '');
+    const dioceseMatch = (diocese || '') === (member.diocese || '');
     const cpfMatch = (cpf || '').trim() === (member.cpf || '').trim();
     const rgMatch = (rg || '').trim() === (member.rg || '').trim();
     const birthdateMatch = (birthdate || '').trim() === (member.birthdate || '').trim();
     const emailMatch = (email || '').trim() === (member.email || '').trim();
 
-    if (nameMatch && raMatch && courseMatch && cpfMatch && rgMatch && birthdateMatch && emailMatch && !rolesChanged && !photoBase64) {
+    if (nameMatch && raMatch && courseMatch && dioceseMatch && cpfMatch && rgMatch && birthdateMatch && emailMatch && !rolesChanged && !photoBase64) {
       setError('Altere pelo menos um dado antes de enviar.');
       return;
     }
@@ -76,6 +87,7 @@ export default function SuggestEditModal({ member, onClose, onSubmitSuccess }: S
       if (!nameMatch) pendingChanges.name = name.trim();
       if (!raMatch) pendingChanges.ra = ra.trim();
       if (!courseMatch) pendingChanges.course = course;
+      if (!dioceseMatch) pendingChanges.diocese = diocese;
       if (!cpfMatch) pendingChanges.cpf = cpf.trim();
       if (!rgMatch) pendingChanges.rg = rg.trim();
       if (!birthdateMatch) pendingChanges.birthdate = birthdate.trim();
@@ -175,10 +187,18 @@ export default function SuggestEditModal({ member, onClose, onSubmitSuccess }: S
               <label className="block text-[10px] sm:text-xs font-semibold text-slate-500 uppercase mb-1 mt-2">Novo Curso</label>
               <select value={course} onChange={e => setCourse(e.target.value)} className="input-modern w-full rounded-xl py-3 px-4 text-sm">
                   <option value="">Nenhum / Não aplicável</option>
-                  <option value="FILOSOFIA">FILOSOFIA</option>
-                  <option value="FILOSOFIA EAD">FILOSOFIA EAD</option>
-                  <option value="TEOLOGIA">TEOLOGIA</option>
-                  <option value="TEOLOGIA EAD">TEOLOGIA EAD</option>
+                  {availableCourses.map(c => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+              </select>
+          </div>
+          <div>
+              <label className="block text-[10px] sm:text-xs font-semibold text-slate-500 uppercase mb-1 mt-2">Nova Diocese</label>
+              <select value={diocese} onChange={e => setDiocese(e.target.value)} className="input-modern w-full rounded-xl py-3 px-4 text-sm">
+                  <option value="">Nenhum / Não aplicável</option>
+                  {availableDioceses.map(d => (
+                    <option key={d} value={d}>{d}</option>
+                  ))}
               </select>
           </div>
           <div>

@@ -1,9 +1,11 @@
 {
   "name": "DAVVERO-ID",
   "short_name": "DAVVERO",
+  "id": "/davvero-id-pwa",
   "description": "Sistema avançado de verificação de identidades institucionais.",
   "start_url": "/",
   "display": "standalone",
+  "orientation": "portrait",
   "background_color": "#0f172a",
   "theme_color": "#0ea5e9",
   "icons": [
