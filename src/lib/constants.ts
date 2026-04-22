@@ -24,13 +24,14 @@ export const INSTITUTION_DESCRIPTION_KEY = 'davveroId_institution_description';
 export const CARD_DESCRIPTION_KEY = 'davveroId_card_description';
 export const CUSTOM_ROLES_KEY = 'davveroId_custom_roles';
 export const CUSTOM_COURSES_KEY = 'davveroId_custom_courses';
-export const APP_VERSION = '4.1.0';
+export const APP_VERSION = '4.2.0';
 export const SETTINGS_DOC_PATH = (appId: string) => `artifacts/${appId}/public/data/students/_settings_global`;
 export const ASSETS_DOC_PATH = (appId: string, assetType: string) => `artifacts/${appId}/public/data/students/_asset_${assetType}`;
 export const CHANGELOG = [
-  "Identidade Permanente: O programa agora chama-se 'DAVVERO-ID'.",
-  "Dupla Assinatura: Suporte para assinaturas do Diretor e Reitor simultaneamente.",
-  "Gestão de Ativos: Otimização de armazenamento para assinaturas e logotipos.",
-  "Notificações Onipresentes: Alertas nativos no Windows para novas solicitações (PWA).",
-  "Sincronização em nuvem das configurações (Logos, Cores e Nomes)."
+  "Versão 4.2.0 - DAVVERO-ID Core",
+  "Correção PWA: Melhoria na detecção de instalabilidade para Chrome, Edge e Samsung Internet.",
+  "Atalho de Instalação: Botão direto no cabeçalho para instalação rápida como aplicativo.",
+  "Sugestão de Diocese: Alunos agora podem sugerir correções no campo de Diocese.",
+  "Identidade Fixa: O nome 'DAVVERO-ID' agora é a marca oficial e imutável do cabeçalho.",
+  "Gestão Dinâmica: Integração total de cursos e dioceses customizadas em todos os formulários."
 ];
