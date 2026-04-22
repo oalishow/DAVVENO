@@ -123,6 +123,7 @@ export default function PublicRequestModal({ onClose, onSubmitSuccess }: PublicR
         diocese,
         photoUrl: photoBase64,
         isApproved: false, // Pedido pendente  
+        hasPendingAction: true,
         createdAt: new Date().toISOString()
       };
 

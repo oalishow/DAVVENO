@@ -19,4 +19,5 @@ export interface Member {
   legacyId?: string;
   legacyQrCode?: string;
   pendingChanges?: any;
+  hasPendingAction?: boolean;
 }

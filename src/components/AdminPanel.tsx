@@ -91,74 +91,64 @@ export default function AdminPanel({ onLogout }: { onLogout: () => void }) {
     }
   };
 
-  const loadDashboardStats = async () => {
-    try {
-      const q = query(collection(db, `artifacts/${appId}/public/data/students`));
-      const snapshot = await getDocs(q);
-      const allMembers = snapshot.docs.map((d) => ({ id: d.id, ...d.data() as Member }));
-      
-      const todayObj = new Date();
-      const todayStr = todayObj.getFullYear() + '-' + String(todayObj.getMonth() + 1).padStart(2, '0') + '-' + String(todayObj.getDate()).padStart(2, '0');
-      
-      let active = 0; let inactive = 0; let pending = 0; let trash = 0;
-      let expiredCountThisSession = 0;
+  const loadDashboardStats = (members: Member[]) => {
+    const todayObj = new Date();
+    const todayStr = todayObj.getFullYear() + '-' + String(todayObj.getMonth() + 1).padStart(2, '0') + '-' + String(todayObj.getDate()).padStart(2, '0');
+    
+    let active = 0; let inactive = 0; let pending = 0; let trash = 0;
+    let expiredCountThisSession = 0;
 
-      for (const m of allMembers) {
-        if (!m.alphaCode) continue;
-
-        // Auto-expiration Logic
-        const isExpired = m.validityDate && m.validityDate < todayStr;
-        if (isExpired && m.isActive && m.isApproved && !m.deletedAt) {
-          // Softly inactivate them so they show in requests (isApproved = false)
-          updateDoc(doc(db, `artifacts/${appId}/public/data/students`, m.id), {
-            isActive: false,
-            isApproved: false
-          }).catch(console.error);
-          
-          m.isActive = false;
-          m.isApproved = false;
-          expiredCountThisSession++;
-        }
-
-        if (m.deletedAt) {
-          trash++;
-        } else if (m.isApproved === false || m.pendingChanges) {
-          pending++;
-        } else if (m.isActive === false) {
-          inactive++;
-        } else {
-          active++;
-        }
-      }
-      
-      if (expiredCountThisSession > 0) {
-        setStatus({ msg: `${expiredCountThisSession} carteirinha(s) recém-vencida(s) foi(ram) movida(s) para Pendentes.`, type: 'error' });
-        setTimeout(() => setStatus(null), 6000);
+    for (const m of members) {
+      if (!m.alphaCode) {
+         if (m.isApproved === false || m.pendingChanges || m.hasPendingAction) pending++;
+         continue;
       }
 
-      setStats({ totalActive: active, totalInactive: inactive, totalPending: pending, totalTrash: trash });
-    } catch(e) {
-      console.error(e);
+      // Auto-expiration Logic
+      const isExpired = m.validityDate && m.validityDate < todayStr;
+      if (isExpired && m.isActive && m.isApproved && !m.deletedAt) {
+        updateDoc(doc(db, `artifacts/${appId}/public/data/students`, m.id), {
+          isActive: false,
+          isApproved: false,
+          hasPendingAction: true
+        }).catch(console.error);
+        expiredCountThisSession++;
+        pending++;
+        continue;
+      }
+
+      if (m.deletedAt) {
+        trash++;
+      } else if (m.isApproved === false || m.pendingChanges || m.hasPendingAction) {
+        pending++;
+      } else if (m.isActive === false) {
+        inactive++;
+      } else {
+        active++;
+      }
     }
+    
+    if (expiredCountThisSession > 0) {
+      setStatus({ msg: `${expiredCountThisSession} carteirinha(s) recém-vencida(s) movida(s) para Pendentes.`, type: 'error' });
+      setTimeout(() => setStatus(null), 6000);
+    }
+
+    setStats({ totalActive: active, totalInactive: inactive, totalPending: pending, totalTrash: trash });
   };
 
   useEffect(() => {
-    // Sincronizar versão do código com a nuvem automaticamente (Admin só)
     if (settings.version !== APP_VERSION) {
       updateSettings({ version: APP_VERSION }).catch(console.error);
     }
-    loadDashboardStats();
 
-    // Monitoramento em tempo real de estatísticas (Apenas se logado)
-    const user = auth.currentUser;
-    if (user && !user.isAnonymous) {
-      const q = query(collection(db, `artifacts/${appId}/public/data/students`));
-      const unsub = onSnapshot(q, () => {
-        loadDashboardStats();
-      });
-      return () => unsub();
-    }
-  }, [showList, showBin, showRequests, settings.version]);
+    const q = query(collection(db, `artifacts/${appId}/public/data/students`));
+    const unsub = onSnapshot(q, (snapshot) => {
+      const members = snapshot.docs.map(d => ({ id: d.id, ...d.data() } as Member));
+      loadDashboardStats(members);
+    });
+
+    return () => unsub();
+  }, [settings.version]);
 
   const handleLogoutAdmin = async () => {
     localStorage.removeItem('adminMasterLogged');

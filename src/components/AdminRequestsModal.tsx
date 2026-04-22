@@ -46,6 +46,7 @@ export default function AdminRequestsModal({ onClose }: { onClose: () => void })
         isApproved: true,
         isActive: true,
         alphaCode,
+        hasPendingAction: false,
         validityDate: new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0] // Vence em 1 ano por segurança
       });
       fetchRequests();
@@ -58,7 +59,7 @@ export default function AdminRequestsModal({ onClose }: { onClose: () => void })
   const handleApproveEdit = async (member: Member) => {
     try {
       const pc = member.pendingChanges;
-      const updatePayload: any = { pendingChanges: null };
+      const updatePayload: any = { pendingChanges: null, hasPendingAction: false };
       if (pc.name) updatePayload.name = pc.name;
       if (pc.ra) updatePayload.ra = pc.ra;
       if (pc.roles) updatePayload.roles = pc.roles;
@@ -85,7 +86,7 @@ export default function AdminRequestsModal({ onClose }: { onClose: () => void })
     try {
       const mRef = doc(db, `artifacts/${appId}/public/data/students`, id);
       if (isEdit) {
-        await updateDoc(mRef, { pendingChanges: null });
+        await updateDoc(mRef, { pendingChanges: null, hasPendingAction: false });
       } else {
         await deleteDoc(mRef);
       }

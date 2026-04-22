@@ -19,72 +19,41 @@ export default function NotificationObserver() {
           Notification.requestPermission();
         }
 
-        // Listener for PENDING APPROVALS
-        const qPending = query(
+        // Listener for PENDING ACTIONS
+        const qActions = query(
           collection(db, `artifacts/${appId}/public/data/students`),
-          where('isApproved', '==', false)
+          where('hasPendingAction', '==', true)
         );
 
-        const unsubPending = onSnapshot(qPending, (snapshot) => {
+        const unsubActions = onSnapshot(qActions, (snapshot) => {
           snapshot.docChanges().forEach((change) => {
-            if (change.type === 'added') {
+            if (change.type === 'added' || (change.type === 'modified' && !notifiedIds.current.has(change.doc.id))) {
               const data = change.doc.data() as Member;
               const docId = change.doc.id;
               
-              // Only notify for items created after we started observing
-              // Or at least very recently to avoid mass notifications on startup
-              const created = data.createdAt ? new Date(data.createdAt).getTime() : 0;
+              // Only notify if it's new since we opened the session
+              const created = data.createdAt ? new Date(data.createdAt).getTime() : Date.now();
               
               if (created > lastProcessedTime.current && !notifiedIds.current.has(docId)) {
-                sendNotification('A vero ID - Nova Solicitação', {
-                  body: `O(A) estudante ${data.name} solicitou uma nova identidade.`,
+                const title = data.isApproved === false ? '🎒 Nova Solicitação' : '✏️ Sugestão de Edição';
+                const body = data.isApproved === false 
+                  ? `Estudante ${data.name} solicitou uma nova identidade digital.` 
+                  : `Estudante ${data.name} enviou uma proposta de alteração de dados.`;
+
+                sendNotification(title, {
+                  body,
                   tag: `pending-${docId}`
                 });
                 notifiedIds.current.add(docId);
               }
+            } else if (change.type === 'removed') {
+              notifiedIds.current.delete(change.doc.id);
             }
           });
         });
 
-        // Listener for PENDING CHANGES (Suggest Edits)
-        // Note: Firestore doesn't support 'where field != null' directly in a simple query without indexing complexity 
-        // using the SDK, but we can query by a boolean flag if we had one.
-        // For now, let's just listen to the collection for modifications if the count is manageable, 
-        // or specifically handle it.
-        // Actually, the members list is already synced in many places.
-        
-        // Let's refine the query for changes.
-        // If we don't have a 'hasPendingChanges' field, we'd need to fetch all or use a different strategy.
-        // Looking at current data, 'pendingChanges' is an object.
-        
-        const qChanges = query(
-          collection(db, `artifacts/${appId}/public/data/students`)
-        );
-
-        const unsubChanges = onSnapshot(qChanges, (snapshot) => {
-          snapshot.docChanges().forEach((change) => {
-             // We only care about modifications that might have added pendingChanges
-             if (change.type === 'modified') {
-                const data = change.doc.data() as Member;
-                const docId = change.doc.id;
-                
-                if (data.pendingChanges && !notifiedIds.current.has(`change-${docId}`)) {
-                   sendNotification('A vero ID - Nova Sugestão', {
-                      body: `O(A) estudante ${data.name} enviou uma sugestão de alteração.`,
-                      tag: `change-${docId}`
-                   });
-                   notifiedIds.current.add(`change-${docId}`);
-                } else if (!data.pendingChanges) {
-                   // Clear from set if changes were handled
-                   notifiedIds.current.delete(`change-${docId}`);
-                }
-             }
-          });
-        });
-
         return () => {
-          unsubPending();
-          unsubChanges();
+          unsubActions();
         };
       }
     });

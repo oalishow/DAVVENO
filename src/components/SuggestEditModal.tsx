@@ -96,7 +96,8 @@ export default function SuggestEditModal({ member, onClose, onSubmitSuccess }: S
       if (photoBase64) pendingChanges.photoUrl = photoBase64;
 
       await updateDoc(doc(db, `artifacts/${appId}/public/data/students`, member.id), {
-        pendingChanges: pendingChanges
+        pendingChanges: pendingChanges,
+        hasPendingAction: true
       });
 
       // Local onde entra notificação EmailJS extendida
