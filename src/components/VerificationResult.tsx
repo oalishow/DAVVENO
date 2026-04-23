@@ -169,7 +169,7 @@ export default function VerificationResult({ member, status, onReset, isMyID = f
                   <FajopaIDCard member={member} />
                </div>
                {/* Hidden node specifically optimized for exporting without 3D perspective issues */}
-               <div className="absolute opacity-0 pointer-events-none -z-50 left-0 top-0">
+               <div className="absolute opacity-0 pointer-events-none -z-50 left-0 top-0 print:static print:opacity-100 print:z-auto print:pointer-events-auto">
                   <FajopaIDCard member={member} exportMode={true} />
                </div>
                

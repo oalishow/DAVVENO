@@ -8,6 +8,7 @@ import VerificationResult from './VerificationResult';
 import Modal from './Modal';
 
 const STUDENT_BOND_KEY = 'davveroId_student_identity';
+const STUDENT_TRACK_KEY = 'davveroId_student_track_ra';
 const STUDENT_FALLBACK_PIN = 'student_fallback_pin';
 
 interface StudentPortalProps {
@@ -177,6 +178,8 @@ export default function StudentPortal({ overrideCode, onOverrideConsumed }: Stud
         }
 
         setTrackStatusResult({ status: statusObj, msg: statusText, name: activeDoc.name });
+        // Enable background notifications for this track request
+        localStorage.setItem(STUDENT_TRACK_KEY, trackRa.trim());
       }
     } catch (err) {
       setError("Erro ao buscar status do pedido.");

@@ -228,6 +228,7 @@ export default function FajopaIDCard({ member, exportMode = false, settings: pro
            {displayLogoFront ? (
               <img 
                 src={displayLogoFront} 
+                crossOrigin="anonymous"
                 alt="Logo Inst" 
                 className="w-[85%] h-[85%] object-contain" 
                 style={{ filter: 'drop-shadow(0 0 2px white) drop-shadow(0 0 1px white)' }}
@@ -399,6 +400,7 @@ export default function FajopaIDCard({ member, exportMode = false, settings: pro
                 {displayLogoBack ? (
                    <img 
                       src={displayLogoBack} 
+                      crossOrigin="anonymous"
                       alt="Logo" 
                       className="w-full h-full object-contain" 
                       style={{ filter: 'drop-shadow(0 0 2px white) drop-shadow(0 0 1px white)' }}
@@ -458,6 +460,7 @@ export default function FajopaIDCard({ member, exportMode = false, settings: pro
                >
                  <img 
                     src={cardSecondaryBackLogo} 
+                    crossOrigin="anonymous"
                     alt="Logo Secundária" 
                     className="w-full h-full object-contain" 
                     style={{ filter: 'drop-shadow(0 0 2px white) drop-shadow(0 0 1px white)' }}
@@ -493,12 +496,12 @@ export default function FajopaIDCard({ member, exportMode = false, settings: pro
 
   if (exportMode) {
     return (
-      <div style={{ position: 'absolute', width: 0, height: 0, overflow: 'hidden' }}>
-        <div id="export-card-node" className="flex flex-col gap-10 w-[600px] items-center p-8 bg-white" style={{ position: 'relative' }}>
-          <div className="relative w-[600px] h-[378px]">
+      <div className="absolute opacity-0 pointer-events-none -z-50 left-0 top-0 overflow-hidden w-0 h-0 print:static print:opacity-100 print:w-full print:h-auto print:z-50 print:pointer-events-auto">
+        <div id="export-card-node" className="flex flex-col gap-10 w-[600px] items-center p-8 bg-white print:p-0 print:gap-4 print:bg-transparent" style={{ position: 'relative' }}>
+          <div className="relative w-[600px] h-[378px] print:w-full print:h-auto">
             {frontSide}
           </div>
-          <div className="relative w-[600px] h-[378px]">
+          <div className="relative w-[600px] h-[378px] print:w-full print:h-auto">
              {backSide}
           </div>
         </div>
