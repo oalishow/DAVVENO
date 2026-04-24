@@ -46,9 +46,14 @@ export default function Header() {
 
   const handleInstallClick = async () => {
     if (!deferredPrompt) return;
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    if (outcome === 'accepted') setDeferredPrompt(null);
+    try {
+      await deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') setDeferredPrompt(null);
+    } catch (err) {
+      console.error('Failed to prompt install:', err);
+      setDeferredPrompt(null);
+    }
   };
 
   const { 

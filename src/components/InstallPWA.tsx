@@ -60,12 +60,19 @@ export default function InstallPWA() {
 
   const handleInstallClick = async () => {
     if (!deferredPrompt) return;
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    if (outcome === 'accepted') {
+    try {
+      await deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        setShowInstallBtn(false);
+      }
+      setDeferredPrompt(null);
+    } catch (err) {
+      console.error('Failed to prompt install:', err);
+      // Fallback: clear the prompt so they can just use instructions
+      setDeferredPrompt(null);
       setShowInstallBtn(false);
     }
-    setDeferredPrompt(null);
   };
 
   if (isLandingMode && !window.matchMedia('(display-mode: standalone)').matches && !isInstalled) {

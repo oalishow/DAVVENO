@@ -1,4 +1,4 @@
-const CACHE_NAME = 'verify-id-v3'; // Bumped version to refresh cache
+const CACHE_NAME = 'verify-id-v4'; // Bumped version to refresh cache
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
