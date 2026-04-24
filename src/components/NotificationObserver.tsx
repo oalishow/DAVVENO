@@ -17,9 +17,10 @@ export default function NotificationObserver() {
       const isMasterLogged = localStorage.getItem('adminMasterLogged') === 'true';
       if (!isMasterLogged) return null;
 
-      if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
-         Notification.requestPermission();
-      }
+      // Disable automatic permission request on interval
+      // if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
+      //    Notification.requestPermission();
+      // }
 
       lastProcessedTime.current = Date.now();
       
@@ -59,9 +60,10 @@ export default function NotificationObserver() {
       const trackRa = localStorage.getItem(STUDENT_TRACK_KEY);
       if (!bondedId && !trackRa) return null;
 
-      if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
-         Notification.requestPermission();
-      }
+      // Disable automatic permission request on interval
+      // if (typeof Notification !== 'undefined' && Notification.permission === 'default') {
+      //    Notification.requestPermission();
+      // }
 
       // Query by alphaCode (bonded) OR RA (tracked)
       const qStudent = query(
