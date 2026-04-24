@@ -6,6 +6,8 @@ import {
   LogOut,
   Loader2,
   ShieldCheck,
+  CheckCircle,
+  History,
   Lock,
   KeyRound,
   Clock,
@@ -100,6 +102,8 @@ export default function StudentPortal({
   const [alphaCode, setAlphaCode] = useState("");
   const [isProcessingAnimation, setIsProcessingAnimation] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [activeTab, setActiveTab] = useState<"id" | "events" | "certificates">("id");
+  const [eventsSubTab, setEventsSubTab] = useState<"upcoming" | "past">("upcoming");
 
   // Modal States
   const [modalUnlinkOpen, setModalUnlinkOpen] = useState(false);
@@ -123,6 +127,7 @@ export default function StudentPortal({
 
   const [allEvents, setAllEvents] = useState<Event[]>([]);
   const [availableEvents, setAvailableEvents] = useState<Event[]>([]);
+  const [pastEvents, setPastEvents] = useState<Event[]>([]);
   const [myAttendances, setMyAttendances] = useState<Attendance[]>([]);
   const [isEnrollingInProgress, setIsEnrollingInProgress] = useState<
     string | null
@@ -149,6 +154,7 @@ export default function StudentPortal({
             });
             setAllEvents(evts);
             setAvailableEvents(evts.filter((e) => e.status === "aberto"));
+            setPastEvents(evts.filter((e) => e.status === "encerrado"));
           }
         },
       );
@@ -746,106 +752,306 @@ export default function StudentPortal({
             isMyID={true}
           />
 
-          {/* SEÇÃO: BAIXAR CERTIFICADOS */}
-          <div className="mt-8 w-full no-print print:hidden">
-            <h3 className="text-sm font-black text-slate-800 dark:text-white uppercase tracking-widest mb-4 flex items-center justify-center gap-2">
-              <ShieldCheck className="w-4 h-4 text-emerald-500" /> 
-              Baixar Certificados
-            </h3>
-            
-            {allEvents.filter(
-              (e) =>
-                (e.status === "encerrado" || e.status === "aberto") &&
-                e.certificateTemplate?.isApproved === true &&
-                myAttendances.find(
-                  (a) =>
-                    a.eventId === e.id &&
-                    (a.status === "presente" ||
-                      a.status === "apto_para_certificado"),
-                ),
-            ).length > 0 ? (
-              <div className="space-y-3">
-                {allEvents
-                  .filter(
-                    (e) =>
-                      (e.status === "encerrado" || e.status === "aberto") &&
-                      e.certificateTemplate?.isApproved === true &&
-                      myAttendances.find(
-                        (a) =>
-                          a.eventId === e.id &&
-                          (a.status === "presente" ||
-                            a.status === "apto_para_certificado"),
-                      ),
-                  )
-                  .map((event) => {
-                    const startStr = new Date(
-                      event.startDate,
-                    ).toLocaleDateString("pt-BR");
-                    const endStr = event.endDate
-                      ? new Date(event.endDate).toLocaleDateString("pt-BR")
-                      : startStr;
-                    const periodText =
-                      startStr === endStr
-                        ? startStr
-                        : `${startStr} a ${endStr}`;
-                    const formatText =
-                      event.format === "online" ? "Online" : "Presencial";
-
-                    return (
-                      <div
-                        key={event.id}
-                        className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 text-left shadow-sm"
-                      >
-                        <h4 className="font-bold text-slate-800 dark:text-slate-100 text-sm">
-                          {event.title}
-                        </h4>
-                        <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 mb-3">
-                          {event.hours ? `${event.hours} horas • ` : ""}{formatText} • {periodText}
-                        </p>
-                        <button
-                          onClick={() => handleDownloadCertificate(event)}
-                          className="w-full py-2.5 bg-slate-100 dark:bg-slate-800 text-sky-600 dark:text-sky-400 hover:bg-slate-200/50 dark:hover:bg-slate-700 rounded-xl text-xs font-bold transition-colors border border-slate-200 dark:border-slate-700 flex items-center justify-center gap-2"
-                        >
-                          {isDownloading ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                          ) : (
-                            <>
-                              <ExternalLink className="w-3.5 h-3.5" />
-                              Descarregar Certificado
-                            </>
-                          )}
-                        </button>
-                      </div>
-                    );
-                  })}
-              </div>
-            ) : (
-              <div className="bg-slate-50 dark:bg-slate-800/30 p-8 rounded-3xl border border-dashed border-slate-200 dark:border-slate-700 text-center">
-                <p className="text-[10px] uppercase font-bold text-slate-400 tracking-widest mb-1">
-                  Nenhum certificado disponível
-                </p>
-                <p className="text-xs text-slate-500 px-4">
-                  Seus certificados aparecerão aqui assim que sua participação for confirmada em eventos encerrados ou liberados.
-                </p>
-              </div>
-            )}
+          {/* TAB NAVIGATION */}
+          <div className="w-full mt-8 bg-slate-100 dark:bg-slate-800/50 p-1 rounded-2xl flex no-print print:hidden">
+            <button
+              onClick={() => setActiveTab("id")}
+              className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                activeTab === "id"
+                  ? "bg-white dark:bg-slate-700 text-sky-600 dark:text-sky-400 shadow-sm"
+                  : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+              }`}
+            >
+              <CreditCard className="w-4 h-4" />
+              Minha ID
+            </button>
+            <button
+              onClick={() => setActiveTab("events")}
+              className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                activeTab === "events"
+                  ? "bg-white dark:bg-slate-700 text-sky-600 dark:text-sky-400 shadow-sm"
+                  : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+              }`}
+            >
+              <QrCode className="w-4 h-4" />
+              Eventos
+            </button>
+            <button
+              onClick={() => setActiveTab("certificates")}
+              className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                activeTab === "certificates"
+                  ? "bg-white dark:bg-slate-700 text-sky-600 dark:text-sky-400 shadow-sm"
+                  : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+              }`}
+            >
+              <ShieldCheck className="w-4 h-4" />
+              Certificados
+            </button>
           </div>
 
-          <div className="mt-8 w-full px-4 py-6 bg-slate-50 dark:bg-slate-800/50 rounded-3xl border border-slate-200 dark:border-slate-700/50 text-center no-print print:hidden">
-            <h3 className="text-sm font-black text-slate-800 dark:text-white uppercase tracking-widest mb-3 leading-tight">
-              Validade Nacional
-            </h3>
-            <p className="text-[10px] text-slate-500 mb-4 px-4 leading-relaxed font-medium">
-              O DAVVERO-ID é seu documento institucional. Para eventos nacionais
-              que exijam o padrão ITI com certificação ICP-Brasil, você pode
-              solicitar o DNE oficial.
-            </p>
-            <button
-              onClick={() => setModalDNEOpen(true)}
-              className="w-full py-3.5 px-4 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-xl text-slate-700 dark:text-slate-200 text-xs font-bold hover:bg-slate-50 dark:hover:bg-slate-700 transition-all flex items-center justify-center gap-2 active:scale-95"
-            >
-              Solicitar Documento Nacional (DNE - Padrão ITI)
-            </button>
+          <div className="w-full mt-6">
+            {activeTab === "id" && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="space-y-6"
+              >
+                <div className="px-4 py-6 bg-blue-50/50 dark:bg-blue-900/10 rounded-3xl border border-blue-100 dark:border-blue-900/30">
+                  <p className="text-xs text-blue-700 dark:text-blue-400 font-medium leading-relaxed">
+                    Esta é a sua Identidade Estudantil oficial. Use o QR Code acima para validar sua presença em eventos e garantir seu acesso aos benefícios estudantis.
+                  </p>
+                </div>
+                
+                <div className="px-4 py-6 bg-slate-50 dark:bg-slate-800/50 rounded-3xl border border-slate-200 dark:border-slate-700/50 text-center no-print print:hidden">
+                  <h3 className="text-sm font-black text-slate-800 dark:text-white uppercase tracking-widest mb-3 leading-tight">
+                    Validade Nacional
+                  </h3>
+                  <p className="text-[10px] text-slate-500 mb-4 px-4 leading-relaxed font-medium">
+                    O DAVVERO-ID é seu documento institucional. Para eventos nacionais
+                    que exijam o padrão ITI com certificação ICP-Brasil, você pode
+                    solicitar o DNE oficial.
+                  </p>
+                  <button
+                    onClick={() => setModalDNEOpen(true)}
+                    className="w-full py-3.5 px-4 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-xl text-slate-700 dark:text-slate-200 text-xs font-bold hover:bg-slate-50 dark:hover:bg-slate-700 transition-all flex items-center justify-center gap-2 active:scale-95 shadow-sm"
+                  >
+                    Solicitar Documento Nacional (DNE)
+                  </button>
+                </div>
+              </motion.div>
+            )}
+
+            {activeTab === "events" && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="space-y-4"
+              >
+                {/* SUB-TABS for Events */}
+                <div className="flex gap-2 p-1 bg-slate-100 dark:bg-slate-800/30 rounded-2xl mb-6">
+                  <button
+                    onClick={() => setEventsSubTab("upcoming")}
+                    className={`flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                      eventsSubTab === "upcoming"
+                        ? "bg-white dark:bg-slate-700 text-sky-600 shadow-sm"
+                        : "text-slate-400 hover:text-slate-600"
+                    }`}
+                  >
+                    Próximos
+                  </button>
+                  <button
+                    onClick={() => setEventsSubTab("past")}
+                    className={`flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                      eventsSubTab === "past"
+                        ? "bg-white dark:bg-slate-700 text-sky-600 shadow-sm"
+                        : "text-slate-400 hover:text-slate-600"
+                    }`}
+                  >
+                    Histórico
+                  </button>
+                </div>
+
+                {eventsSubTab === "upcoming" ? (
+                  <>
+                    <div className="flex items-center justify-between mb-2 px-1">
+                      <h3 className="text-xs font-black text-slate-800 dark:text-white uppercase tracking-widest flex items-center gap-2">
+                        <QrCode className="w-4 h-4 text-sky-500" /> Próximos Eventos
+                      </h3>
+                    </div>
+
+                    {availableEvents.length > 0 ? (
+                      <div className="space-y-4">
+                        {availableEvents.map((event) => {
+                          const isEnrolled = myAttendances.some(a => a.eventId === event.id);
+                          return (
+                            <div key={event.id} className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-3xl p-5 shadow-sm">
+                              <div className="flex justify-between items-start mb-3">
+                                <span className={`text-[9px] font-black uppercase px-2 py-1 rounded-full ${
+                                  event.format === "presencial" 
+                                    ? "bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400"
+                                    : "bg-sky-100 dark:bg-sky-500/20 text-sky-700 dark:text-sky-400"
+                                }`}>
+                                  {event.format === "presencial" ? "Presencial" : "Online"}
+                                </span>
+                                {isEnrolled && (
+                                  <span className="text-[9px] font-black uppercase px-2 py-1 bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400 rounded-full flex items-center gap-1">
+                                    <ShieldCheck className="w-3 h-3" /> Inscrito
+                                  </span>
+                                )}
+                              </div>
+                              <h4 className="font-bold text-slate-800 dark:text-white text-sm mb-1 leading-tight">{event.title}</h4>
+                              <p className="text-xs text-slate-500 dark:text-slate-400 mb-4 line-clamp-2">{event.description}</p>
+                              
+                              <div className="flex items-center gap-4 text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-tight mb-4">
+                                 <div className="flex items-center gap-1.5">
+                                   <Clock className="w-3.5 h-3.5" />
+                                   {new Date(event.startDate).toLocaleDateString("pt-BR")}
+                                 </div>
+                                 {event.hours && (
+                                   <div className="flex items-center gap-1.5">
+                                     <LogOut className="w-3.5 h-3.5 rotate-180" />
+                                     {event.hours}H
+                                   </div>
+                                 )}
+                              </div>
+
+                              {!isEnrolled ? (
+                                <button
+                                  onClick={() => handleEnroll(event.id)}
+                                  disabled={isEnrollingInProgress === event.id}
+                                  className="w-full py-3 bg-sky-600 hover:bg-sky-500 disabled:bg-slate-400 text-white rounded-2xl font-bold transition-all active:scale-95 shadow-md flex items-center justify-center gap-2"
+                                >
+                                  {isEnrollingInProgress === event.id ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                  ) : "Inscrever-se Agora"}
+                                </button>
+                              ) : (
+                                <div className="w-full py-3 bg-emerald-50 dark:bg-emerald-900/10 text-emerald-600 dark:text-emerald-500 rounded-2xl font-bold border border-emerald-100 dark:border-emerald-900/30 text-center text-xs">
+                                  Inscrição confirmada
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="bg-slate-50 dark:bg-slate-800/30 p-10 rounded-3xl border border-dashed border-slate-200 dark:border-slate-700 text-center">
+                        <p className="text-[10px] uppercase font-bold text-slate-400 tracking-widest mb-2">Nenhum evento aberto</p>
+                        <p className="text-xs text-slate-500">No momento não há inscrições abertas para novos eventos.</p>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <div className="flex items-center justify-between mb-2 px-1">
+                      <h3 className="text-xs font-black text-slate-800 dark:text-white uppercase tracking-widest flex items-center gap-2">
+                        <History className="w-4 h-4 text-slate-500" /> Eventos Encerrados
+                      </h3>
+                    </div>
+
+                    {pastEvents.filter(e => myAttendances.some(a => a.eventId === e.id)).length > 0 ? (
+                      <div className="space-y-4">
+                        {pastEvents
+                          .filter(e => myAttendances.some(a => a.eventId === e.id))
+                          .map((event) => (
+                            <div key={event.id} className="bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50 rounded-3xl p-5 shadow-sm">
+                              <h4 className="font-bold text-slate-700 dark:text-white text-sm mb-1 leading-tight">{event.title}</h4>
+                              <p className="text-[10px] text-slate-500 dark:text-slate-400 mb-3 uppercase font-bold">
+                                {new Date(event.startDate).toLocaleDateString("pt-BR")} • {event.format === "presencial" ? "Presencial" : "Online"}
+                              </p>
+                              <div className="flex items-center gap-2">
+                                {myAttendances.find(a => a.eventId === event.id)?.status === "presente" || 
+                                 myAttendances.find(a => a.eventId === event.id)?.status === "apto_para_certificado" ? (
+                                  <span className="text-[10px] font-black uppercase text-emerald-600 dark:text-emerald-500 flex items-center gap-1">
+                                    <CheckCircle className="w-3 h-3" /> Presença Confirmada
+                                  </span>
+                                ) : (
+                                  <span className="text-[10px] font-black uppercase text-slate-400 flex items-center gap-1 font-medium">
+                                    <LogOut className="w-3 h-3" /> Evento Finalizado
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                      </div>
+                    ) : (
+                      <div className="bg-slate-50 dark:bg-slate-800/30 p-10 rounded-3xl border border-dashed border-slate-200 dark:border-slate-700 text-center">
+                        <p className="text-[10px] uppercase font-bold text-slate-400 tracking-widest mb-2">Sem histórico</p>
+                        <p className="text-xs text-slate-500">Você ainda não participou ou não possui histórico em eventos encerrados.</p>
+                      </div>
+                    )}
+                  </>
+                )}
+              </motion.div>
+            )}
+
+            {activeTab === "certificates" && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="space-y-4"
+              >
+                <div className="flex items-center justify-between mb-4 px-1">
+                  <h3 className="text-xs font-black text-slate-800 dark:text-white uppercase tracking-widest flex items-center gap-2">
+                    <ShieldCheck className="w-4 h-4 text-emerald-500" /> Meus Certificados
+                  </h3>
+                </div>
+
+                {allEvents.filter(
+                  (e) =>
+                    (e.status === "encerrado" || e.status === "aberto") &&
+                    e.certificateTemplate?.isApproved === true &&
+                    myAttendances.find(
+                      (a) =>
+                        a.eventId === e.id &&
+                        (a.status === "presente" ||
+                          a.status === "apto_para_certificado"),
+                    ),
+                ).length > 0 ? (
+                  <div className="space-y-3">
+                    {allEvents
+                      .filter(
+                        (e) =>
+                          (e.status === "encerrado" || e.status === "aberto") &&
+                          e.certificateTemplate?.isApproved === true &&
+                          myAttendances.find(
+                            (a) =>
+                              a.eventId === e.id &&
+                              (a.status === "presente" ||
+                                a.status === "apto_para_certificado"),
+                          ),
+                      )
+                      .map((event) => {
+                        const startStr = new Date(event.startDate).toLocaleDateString("pt-BR");
+                        const endStr = event.endDate ? new Date(event.endDate).toLocaleDateString("pt-BR") : startStr;
+                        const periodText = startStr === endStr ? startStr : `${startStr} a ${endStr}`;
+                        const formatText = event.format === "online" ? "Online" : "Presencial";
+
+                        return (
+                          <div
+                            key={event.id}
+                            className="bg-white dark:bg-slate-800 p-5 rounded-3xl border border-slate-200 dark:border-slate-700 text-left shadow-sm"
+                          >
+                            <h4 className="font-bold text-slate-800 dark:text-slate-100 text-sm leading-tight mb-2">
+                              {event.title}
+                            </h4>
+                            <div className="flex flex-wrap gap-2 mb-4">
+                              <span className="text-[9px] font-bold uppercase bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-md text-slate-500">
+                                {formatText}
+                              </span>
+                              <span className="text-[9px] font-bold uppercase bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-md text-slate-500">
+                                {periodText}
+                              </span>
+                            </div>
+                            <button
+                              onClick={() => handleDownloadCertificate(event)}
+                              className="w-full py-3 bg-sky-600 hover:bg-sky-500 text-white rounded-2xl text-xs font-bold transition-all active:scale-95 shadow-md flex items-center justify-center gap-2"
+                            >
+                              {isDownloading ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <>
+                                  <ExternalLink className="w-4 h-4" />
+                                  Baixar Certificado
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        );
+                      })}
+                  </div>
+                ) : (
+                  <div className="bg-slate-50 dark:bg-slate-800/30 p-10 rounded-3xl border border-dashed border-slate-200 dark:border-slate-700 text-center">
+                    <p className="text-[10px] uppercase font-bold text-slate-400 tracking-widest mb-2">
+                      Nenhum certificado disponível
+                    </p>
+                    <p className="text-xs text-slate-500">
+                      Os certificados aparecem aqui após a confirmação da sua participação em eventos.
+                    </p>
+                  </div>
+                )}
+              </motion.div>
+            )}
           </div>
         </div>
 

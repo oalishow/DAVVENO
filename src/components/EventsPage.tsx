@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { motion } from "motion/react";
 import {
   Calendar,
   Clock,
@@ -31,6 +32,7 @@ import Modal from "./Modal";
 
 export default function EventsPage({ onNavigateToStudent }: { onNavigateToStudent?: () => void }) {
   const [events, setEvents] = useState<Event[]>([]);
+  const [subTab, setSubTab] = useState<"upcoming" | "past">("upcoming");
   const [myAttendances, setMyAttendances] = useState<Attendance[]>([]);
   const [member, setMember] = useState<Member | null>(null);
   const [isEnrollingInProgress, setIsEnrollingInProgress] = useState<
@@ -197,16 +199,41 @@ export default function EventsPage({ onNavigateToStudent }: { onNavigateToStuden
         </div>
       </div>
 
+      <div className="flex gap-2 p-1 bg-slate-100 dark:bg-slate-800/30 rounded-2xl mb-6 no-print">
+        <button
+          onClick={() => setSubTab("upcoming")}
+          className={`flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+            subTab === "upcoming"
+              ? "bg-white dark:bg-slate-700 text-sky-600 shadow-sm"
+              : "text-slate-400 hover:text-slate-600"
+          }`}
+        >
+          Próximos
+        </button>
+        <button
+          onClick={() => setSubTab("past")}
+          className={`flex-1 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+            subTab === "past"
+              ? "bg-white dark:bg-slate-700 text-sky-600 shadow-sm"
+              : "text-slate-400 hover:text-slate-600"
+          }`}
+        >
+          Encerrados
+        </button>
+      </div>
+
       <div className="space-y-4">
-        {events.length === 0 ? (
+        {events.filter(e => subTab === "upcoming" ? e.status !== "encerrado" : e.status === "encerrado").length === 0 ? (
           <div className="bg-white dark:bg-slate-800 p-8 rounded-3xl text-center border border-slate-200 dark:border-slate-700">
             <Calendar className="w-12 h-12 text-slate-300 dark:text-slate-600 mx-auto mb-3" />
             <p className="text-slate-500 dark:text-slate-400 font-medium">
-              Nenhum evento disponível no momento.
+              Nenhum evento {subTab === "upcoming" ? "disponível" : "encerrado"} no momento.
             </p>
           </div>
         ) : (
-          events.map((event) => {
+          events
+            .filter(e => subTab === "upcoming" ? e.status !== "encerrado" : e.status === "encerrado")
+            .map((event) => {
             const isOnline = event.format === "online";
             const enrolled = myAttendances.find(
               (a) =>
