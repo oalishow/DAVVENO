@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { Printer } from "lucide-react";
+import { Printer, CheckCircle } from "lucide-react";
 import type { Member } from "../types";
 import { QRCodeSVG } from "qrcode.react";
 import { URL_STORAGE_KEY, DEFAULT_PUBLIC_URL } from "../lib/constants";
 import FajopaIDCard from "./FajopaIDCard";
 import Modal from "./Modal";
+import { motion } from "motion/react";
 
 interface VerificationResultProps {
   member: Member | null;
@@ -14,7 +15,8 @@ interface VerificationResultProps {
     | "EXPIRED"
     | "NOT_FOUND"
     | "NOT_ENROLLED"
-    | "ALREADY_PRESENT";
+    | "ALREADY_PRESENT"
+    | "JUST_CHECKED_IN";
   onReset: () => void;
   isMyID?: boolean;
   onEnrollAndCheckIn?: () => void;
@@ -82,6 +84,14 @@ export default function VerificationResult({
       descHtml = "Este aluno já registrou presença neste evento anteriormente.";
       dotColor = "bg-amber-500";
       badgeText = "Já Presente";
+      break;
+    case "JUST_CHECKED_IN":
+      themeClass = "emerald";
+      titleText = "Inscrição e Check-in Concluídos!";
+      subtitleText = "Acesso Limitado/Evento";
+      descHtml = "O aluno foi inscrito no evento e o check-in realizado com sucesso.";
+      dotColor = "bg-emerald-500";
+      badgeText = "Sucesso";
       break;
     default:
       themeClass = "rose";
@@ -214,6 +224,26 @@ export default function VerificationResult({
 
   return (
     <div className="w-full mt-2 print:mt-1 animated-fade-in flex flex-col items-center">
+      {status === 'JUST_CHECKED_IN' && (
+        <motion.div 
+           initial={{ scale: 0.8, opacity: 0 }}
+           animate={{ scale: 1, opacity: 1 }}
+           transition={{ type: "spring", stiffness: 200, damping: 10 }}
+           className="w-full max-w-sm flex flex-col items-center justify-center p-6 bg-white dark:bg-slate-900 rounded-2xl shadow-xl shadow-emerald-500/20 border-2 border-emerald-400 mb-4 pointer-events-none"
+        >
+           <motion.div 
+             initial={{ rotate: -90, scale: 0 }}
+             animate={{ rotate: 0, scale: 1 }}
+             transition={{ type: "spring", delay: 0.1, duration: 0.5 }}
+             className="w-20 h-20 bg-emerald-500 rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(16,185,129,0.5)] mb-4"
+           >
+              <CheckCircle className="w-10 h-10 text-white" />
+           </motion.div>
+           <h2 className="text-xl sm:text-2xl font-bold text-slate-800 dark:text-white text-center">Tudo Certo!</h2>
+           <p className="text-sm font-medium text-slate-500 dark:text-slate-400 text-center mt-2">O check-in e a inscrição de <b>{member?.name?.split(' ')[0]}</b> foram realizados com sucesso.</p>
+        </motion.div>
+      )}
+
       {isMyID && status === "VALID" && member ? (
         <div
           id="validation-card-capture"
@@ -240,8 +270,8 @@ export default function VerificationResult({
       ) : (
         <div
           id={!isMyID ? "validation-card-capture" : undefined}
-          className={`result-card w-full max-w-sm ${status === "VALID" ? "animate-success-pop" : "animate-error-wobble"} bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-2 p-3 sm:p-8 rounded-2xl sm:rounded-[2rem] text-center relative overflow-hidden shadow-xl print:shadow-none print:bg-white print:text-black print:border-slate-300 ${
-            status === "VALID"
+          className={`result-card w-full max-w-sm ${status === "VALID" || status === "JUST_CHECKED_IN" ? "animate-success-pop" : "animate-error-wobble"} bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl border-2 p-3 sm:p-8 rounded-2xl sm:rounded-[2rem] text-center relative overflow-hidden shadow-xl print:shadow-none print:bg-white print:text-black print:border-slate-300 ${
+            status === "VALID" || status === "JUST_CHECKED_IN"
               ? "border-emerald-100 dark:border-emerald-500/50 shadow-emerald-500/10"
               : status === "INACTIVE"
                 ? "border-amber-100 dark:border-amber-500/50 shadow-amber-500/10"
@@ -253,17 +283,17 @@ export default function VerificationResult({
               src={avatarUrl}
               crossOrigin="anonymous"
               alt="Foto"
-              className={`w-full h-full object-cover ${status !== "VALID" && "grayscale"}`}
+              className={`w-full h-full object-cover ${(status !== "VALID" && status !== "JUST_CHECKED_IN") && "grayscale"}`}
             />
           </div>
 
           <h2
-            className={`text-base sm:text-xl font-black mb-0.5 sm:mb-1 uppercase tracking-widest ${status === "VALID" ? "text-emerald-600 dark:text-emerald-400" : status === "INACTIVE" ? "text-amber-600 dark:text-amber-400" : "text-rose-600 dark:text-rose-400"}`}
+            className={`text-base sm:text-xl font-black mb-0.5 sm:mb-1 uppercase tracking-widest ${status === "VALID" || status === "JUST_CHECKED_IN" ? "text-emerald-600 dark:text-emerald-400" : status === "INACTIVE" || status === "ALREADY_PRESENT" ? "text-amber-600 dark:text-amber-400" : "text-rose-600 dark:text-rose-400"}`}
           >
             {titleText}
           </h2>
           <p
-            className={`text-[10px] sm:text-xs font-semibold uppercase tracking-widest mb-3 sm:mb-5 ${status === "VALID" ? "text-emerald-500" : status === "INACTIVE" ? "text-amber-500" : "text-rose-500"}`}
+            className={`text-[10px] sm:text-xs font-semibold uppercase tracking-widest mb-3 sm:mb-5 ${status === "VALID" || status === "JUST_CHECKED_IN" ? "text-emerald-500" : status === "INACTIVE" || status === "ALREADY_PRESENT" ? "text-amber-500" : "text-rose-500"}`}
           >
             {subtitleText}
           </p>
@@ -314,7 +344,7 @@ export default function VerificationResult({
                   Status
                 </p>
                 <p
-                  className={`text-[10px] sm:text-xs font-bold flex items-center gap-1 ${status === "VALID" ? "text-emerald-600" : status === "INACTIVE" ? "text-amber-600" : "text-rose-600"}`}
+                  className={`text-[10px] sm:text-xs font-bold flex items-center gap-1 ${status === "VALID" || status === "JUST_CHECKED_IN" ? "text-emerald-600" : status === "INACTIVE" || status === "ALREADY_PRESENT" ? "text-amber-600" : "text-rose-600"}`}
                 >
                   <span
                     className={`w-1.5 h-1.5 rounded-full ${dotColor}`}
@@ -353,9 +383,9 @@ export default function VerificationResult({
 
           <div
             className={`mt-3 p-2 rounded-xl border text-left ${
-              status === "VALID"
+              status === "VALID" || status === "JUST_CHECKED_IN"
                 ? "bg-emerald-50 dark:bg-emerald-900/30 border-emerald-200 dark:border-emerald-500/30"
-                : status === "INACTIVE"
+                : status === "INACTIVE" || status === "ALREADY_PRESENT"
                   ? "bg-amber-50 dark:bg-amber-900/30 border-amber-200 dark:border-amber-500/30"
                   : "bg-rose-50 dark:bg-rose-900/30 border-rose-200 dark:border-rose-500/30"
             }`}
@@ -391,7 +421,7 @@ export default function VerificationResult({
 
           {member?.alphaCode && (
             <div
-              className="mt-3 flex flex-col items-center gap-1 bg-white p-2 rounded-xl w-fit mx-auto border-2 border-slate-200 shadow-sm cursor-pointer hover:scale-105 transition-transform active:scale-95"
+              className={`mt-3 flex flex-col items-center gap-1 bg-white p-2 rounded-xl w-fit mx-auto border-2 border-slate-200 shadow-sm cursor-pointer hover:scale-105 transition-transform active:scale-95`}
               onClick={() => setShowLargeQR(true)}
               title="Clique para ampliar o QR Code"
             >
@@ -401,7 +431,7 @@ export default function VerificationResult({
                 level="H"
                 includeMargin={true}
               />
-              <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">
+              <span className={`text-[8px] font-black text-slate-400 uppercase tracking-widest`}>
                 {member.alphaCode}
               </span>
             </div>
@@ -474,6 +504,24 @@ export default function VerificationResult({
         )}
       </div>
       <div className="flex flex-col w-full max-w-sm mt-2 no-print print:hidden space-y-2">
+        {isMyID && member?.alphaCode && (
+           <div className="flex flex-col items-center justify-center p-6 bg-white dark:bg-slate-900 rounded-3xl shadow-lg border-2 border-slate-200 dark:border-slate-800 mb-2 mt-2">
+              <h3 className="text-sm font-black text-slate-800 dark:text-white uppercase tracking-widest mb-4">
+                Escaneie-me
+              </h3>
+              <div className="bg-white p-2 rounded-xl border-2 border-slate-200">
+                  <QRCodeSVG
+                    value={`${cleanBaseUrl}?verify=${member.alphaCode}`}
+                    size={220}
+                    level="H"
+                    includeMargin={true}
+                  />
+              </div>
+              <span className="mt-3 text-xs font-black text-slate-400 uppercase tracking-widest break-all text-center">
+                {member.alphaCode}
+              </span>
+           </div>
+        )}
         {status === "NOT_ENROLLED" && onEnrollAndCheckIn && (
           <button
             onClick={onEnrollAndCheckIn}
@@ -501,9 +549,9 @@ export default function VerificationResult({
               onClick={handleExport}
               disabled={exporting}
               className={`flex-1 flex justify-center items-center py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold text-white transition-colors ${
-                status === "VALID"
+                status === "VALID" || status === "JUST_CHECKED_IN"
                   ? "bg-emerald-600 hover:bg-emerald-500"
-                  : status === "INACTIVE"
+                  : status === "INACTIVE" || status === "ALREADY_PRESENT"
                     ? "bg-amber-600 hover:bg-amber-500"
                     : "bg-rose-600 hover:bg-rose-500"
               }`}

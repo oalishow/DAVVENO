@@ -591,7 +591,7 @@ export default function Verifier({
                 eventId: selectedEventId,
                 studentId: validationResult.member.id,
                 status: "presente",
-                enrolledAt: new Date().toISOString(),
+                timestamp: new Date().toISOString(),
               });
               // Add to cache to prevent second time
               setAttendancesCache((prev) => [
@@ -601,13 +601,13 @@ export default function Verifier({
                   eventId: selectedEventId,
                   studentId: validationResult.member!.id,
                   status: "presente",
-                  enrolledAt: new Date().toISOString(),
+                  timestamp: new Date().toISOString(),
                 },
               ]);
-              setSuccessMsg("Inscrição e check-in realizados com sucesso!");
+              setSuccessMsg("");
               setValidationResult({
                 member: validationResult.member,
-                status: "ALREADY_PRESENT",
+                status: "JUST_CHECKED_IN",
               });
             } catch (e: any) {
               alert("Erro ao realizar inscrição: " + e.message);
