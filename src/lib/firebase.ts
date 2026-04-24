@@ -1,5 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, signInAnonymously, onAuthStateChanged } from "firebase/auth";
+import { getMessaging } from "firebase/messaging";
 import {
   initializeFirestore,
   setLogLevel,
@@ -38,6 +39,7 @@ export const db = initializeFirestore(app, {
 });
 
 export const auth = getAuth(app);
+export const messaging = typeof window !== "undefined" ? getMessaging(app) : null;
 setLogLevel("error");
 
 export const appId = firebaseConfig.projectId;
