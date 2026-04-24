@@ -95,7 +95,7 @@ export default function VerificationResult({
       break;
     default:
       themeClass = "rose";
-      titleText = "Registo Não Encontrado";
+      titleText = "Registro Não Encontrado";
       subtitleText = "Acesso Negado";
       descHtml =
         "O código lido não consta na base de dados oficial. Poderá ter sido invalidado, excluído ou nunca existiu.";

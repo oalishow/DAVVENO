@@ -199,20 +199,15 @@ export default function Verifier({
       const verifyCode = params.get("verify");
 
       // Ignore URL parsing for verification if the query params are only internal system params
-      const hasOnlyInternalParams = Array.from(params.keys()).every(
-        (k) => k === "v" || k === "install",
-      );
-      const hasIgnorableSearch =
-        params.toString().length === 0 || hasOnlyInternalParams;
-
       if (verifyCode) {
         runVerification(verifyCode, false, window.location.href);
       } else if (
-        !hasIgnorableSearch ||
-        (window.location.pathname.length > 1 &&
-          window.location.pathname !== "/index.html")
+        window.location.pathname.length > 1 &&
+        window.location.pathname !== "/index.html" &&
+        !window.location.pathname.includes("admin")
       ) {
         // Fallback for native camera opening legacy URL formats redirected to this domain
+        // Only run if there is a real path segment (e.g. /XYZ123)
         runVerification(window.location.href, false, window.location.href);
       }
       setInitialVerifyChecked(true);
