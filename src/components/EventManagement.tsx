@@ -45,7 +45,7 @@ export default function EventManagement() {
   >({});
 
   const [filterStatus, setFilterStatus] = useState<
-    "todos" | "aberto" | "concluido"
+    "todos" | "aberto" | "encerrado"
   >("todos");
 
   const [confirmModal, setConfirmModal] = useState<{
@@ -606,7 +606,7 @@ export default function EventManagement() {
                           <CheckCircle className="w-3 h-3 text-emerald-500 ml-1" />
                         )}
                       </button>
-                      {event.status === "aberto" && (
+                      {(event.status === "aberto" || event.status === "encerrado") && (
                         <button
                           onClick={() => handleEditClick(event)}
                           className="flex items-center justify-center gap-1.5 px-3 py-2 sm:py-1.5 hover:bg-white dark:hover:bg-slate-700 text-sky-600 dark:text-sky-400 text-xs font-bold rounded-md transition-colors"
@@ -655,6 +655,28 @@ export default function EventManagement() {
                         className="w-full sm:w-auto whitespace-nowrap px-3 py-1.5 bg-emerald-100 hover:bg-emerald-200 dark:bg-emerald-500/20 dark:hover:bg-emerald-500/30 text-emerald-700 dark:text-emerald-400 text-xs font-bold rounded-lg transition-colors border border-emerald-200 dark:border-emerald-500/30"
                       >
                         Encerrar e Liberar Certificados
+                      </button>
+                    )}
+
+                    {event.status === "encerrado" && (
+                      <button
+                        onClick={() => {
+                          setConfirmModal({
+                            isOpen: true,
+                            title: "Reabrir Evento",
+                            message:
+                              "Deseja reabrir este evento? Ele voltará a aceitar inscrições.",
+                            variant: "primary",
+                            onConfirm: () => {
+                              updateEventStatus(event.id, "aberto").catch((e) =>
+                                alert(e.message),
+                              );
+                            },
+                          });
+                        }}
+                        className="w-full sm:w-auto whitespace-nowrap px-3 py-1.5 bg-sky-100 hover:bg-sky-200 dark:bg-sky-500/20 dark:hover:bg-sky-500/30 text-sky-700 dark:text-sky-400 text-xs font-bold rounded-lg transition-colors border border-sky-200 dark:border-sky-500/30"
+                      >
+                        Reabrir Evento
                       </button>
                     )}
                   </div>

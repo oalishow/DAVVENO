@@ -715,27 +715,29 @@ export default function StudentPortal({
             isMyID={true}
           />
 
-          {allEvents.filter(
-            (e) =>
-              e.status === "encerrado" &&
-              e.certificateTemplate?.isApproved === true &&
-              myAttendances.find(
-                (a) =>
-                  a.eventId === e.id &&
-                  (a.status === "presente" ||
-                    a.status === "apto_para_certificado"),
-              ),
-          ).length > 0 && (
-            <div className="mt-8 w-full no-print print:hidden">
-              <h3 className="text-sm font-black text-slate-800 dark:text-white uppercase tracking-widest mb-4 flex items-center justify-center gap-2">
-                <ShieldCheck className="w-4 h-4 text-emerald-500" /> Meus
-                Certificados
-              </h3>
+          {/* SEÇÃO: BAIXAR CERTIFICADOS */}
+          <div className="mt-8 w-full no-print print:hidden">
+            <h3 className="text-sm font-black text-slate-800 dark:text-white uppercase tracking-widest mb-4 flex items-center justify-center gap-2">
+              <ShieldCheck className="w-4 h-4 text-emerald-500" /> 
+              Baixar Certificados
+            </h3>
+            
+            {allEvents.filter(
+              (e) =>
+                (e.status === "encerrado" || e.status === "aberto") &&
+                e.certificateTemplate?.isApproved === true &&
+                myAttendances.find(
+                  (a) =>
+                    a.eventId === e.id &&
+                    (a.status === "presente" ||
+                      a.status === "apto_para_certificado"),
+                ),
+            ).length > 0 ? (
               <div className="space-y-3">
                 {allEvents
                   .filter(
                     (e) =>
-                      e.status === "encerrado" &&
+                      (e.status === "encerrado" || e.status === "aberto") &&
                       e.certificateTemplate?.isApproved === true &&
                       myAttendances.find(
                         (a) =>
@@ -761,7 +763,7 @@ export default function StudentPortal({
                     return (
                       <div
                         key={event.id}
-                        className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 text-left"
+                        className="bg-white dark:bg-slate-800 p-4 rounded-2xl border border-slate-200 dark:border-slate-700 text-left shadow-sm"
                       >
                         <h4 className="font-bold text-slate-800 dark:text-slate-100 text-sm">
                           {event.title}
@@ -771,16 +773,32 @@ export default function StudentPortal({
                         </p>
                         <button
                           onClick={() => handleDownloadCertificate(event)}
-                          className="w-full py-2.5 bg-slate-100 dark:bg-slate-800 text-sky-600 dark:text-sky-400 hover:bg-slate-200/50 dark:hover:bg-slate-700 rounded-xl text-xs font-bold transition-colors border border-slate-200 dark:border-slate-700"
+                          className="w-full py-2.5 bg-slate-100 dark:bg-slate-800 text-sky-600 dark:text-sky-400 hover:bg-slate-200/50 dark:hover:bg-slate-700 rounded-xl text-xs font-bold transition-colors border border-slate-200 dark:border-slate-700 flex items-center justify-center gap-2"
                         >
-                          Descarregar Certificado
+                          {isDownloading ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <>
+                              <ExternalLink className="w-3.5 h-3.5" />
+                              Descarregar Certificado
+                            </>
+                          )}
                         </button>
                       </div>
                     );
                   })}
               </div>
-            </div>
-          )}
+            ) : (
+              <div className="bg-slate-50 dark:bg-slate-800/30 p-8 rounded-3xl border border-dashed border-slate-200 dark:border-slate-700 text-center">
+                <p className="text-[10px] uppercase font-bold text-slate-400 tracking-widest mb-1">
+                  Nenhum certificado disponível
+                </p>
+                <p className="text-xs text-slate-500 px-4">
+                  Seus certificados aparecerão aqui assim que sua participação for confirmada em eventos encerrados ou liberados.
+                </p>
+              </div>
+            )}
+          </div>
 
           <div className="mt-8 w-full px-4 py-6 bg-slate-50 dark:bg-slate-800/50 rounded-3xl border border-slate-200 dark:border-slate-700/50 text-center no-print print:hidden">
             <h3 className="text-sm font-black text-slate-800 dark:text-white uppercase tracking-widest mb-3 leading-tight">
