@@ -21,13 +21,57 @@ import {
   getDocs,
   limit,
   doc,
+  getDoc,
   onSnapshot,
 } from "firebase/firestore";
 import { db, appId, enrollStudent } from "../lib/firebase";
 import type { Member, Event, Attendance } from "../types";
 import VerificationResult from "./VerificationResult";
 import Modal from "./Modal";
+import { ASSETS_DOC_PATH } from "../lib/constants";
 import { CertificateRenderer } from "./CertificateRenderer";
+
+const AsyncCertificateRenderer = ({ event, member }: { event: Event, member: Member }) => {
+  const [template, setTemplate] = useState(event.certificateTemplate);
+
+  useEffect(() => {
+    let isMounted = true;
+    if (!template) return;
+
+    const needsAssets = template.hasCustomBg || template.hasFajopaSignature || template.hasRectorSignature;
+    if (!needsAssets) return;
+
+    const fetchAssets = async () => {
+      try {
+        const snap = await getDoc(doc(db, ASSETS_DOC_PATH(appId, `cert_assets_${event.id}`)));
+        if (!isMounted) return;
+        
+        if (snap.exists() && snap.data().data) {
+          const assets = snap.data().data;
+          setTemplate(prev => prev ? {
+            ...prev,
+            ...(assets.backgroundImageUrl && { backgroundImageUrl: assets.backgroundImageUrl }),
+            ...(assets.fajopaDirectorSignatureUrl && { fajopaDirectorSignatureUrl: assets.fajopaDirectorSignatureUrl }),
+            ...(assets.seminarRectorSignatureUrl && { seminarRectorSignatureUrl: assets.seminarRectorSignatureUrl }),
+          } : prev);
+        } else if ((template as any).hasCustomBg) { // Fallback to old bg doc
+          const oldBgSnap = await getDoc(doc(db, ASSETS_DOC_PATH(appId, `cert_bg_${event.id}`)));
+          if (!isMounted) return;
+          if (oldBgSnap.exists() && oldBgSnap.data().data) {
+             setTemplate(prev => prev ? { ...prev, backgroundImageUrl: oldBgSnap.data().data } : prev);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load cert assets for portal", err);
+      }
+    };
+    fetchAssets();
+    return () => { isMounted = false; };
+  }, [event.id]);
+
+  if (!template) return null;
+  return <CertificateRenderer event={event} template={template} member={member} />;
+};
 
 const STUDENT_BOND_KEY = "davveroId_student_identity";
 const STUDENT_TRACK_KEY = "davveroId_student_track_ra";
@@ -628,7 +672,7 @@ export default function StudentPortal({
         <div className="absolute top-[-20000px] left-[-20000px]">
           {allEvents.map((e) => e.certificateTemplate && (
             <div key={e.id} id={`cert-node-${e.id}`}>
-              <CertificateRenderer event={e} template={e.certificateTemplate} member={member} />
+              <AsyncCertificateRenderer event={e} member={member} />
             </div>
           ))}
         </div>

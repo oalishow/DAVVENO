@@ -275,3 +275,17 @@ body {
     overflow: visible !important;
   }
 }
+
+/* Garante que qualquer modal ou overlay de modal fique no topo */
+.fixed.inset-0.z-50 {
+  z-index: 100 !important;
+}
+
+.fixed.inset-0.z-\[9999\] {
+  z-index: 9999 !important;
+}
+
+/* Ajuste os elementos fixos para uma camada inferior */
+header, footer, .install-pwa-button, .davvero-icon {
+  z-index: 40 !important;
+}

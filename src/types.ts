@@ -29,7 +29,19 @@ export interface CertificateTemplate {
   bgStyle: string;
   signatureName: string;
   signatureRole: string;
+  signature2Name?: string;
+  signature2Role?: string;
   isApproved: boolean;
+  backgroundImageUrl?: string;
+  showFajopaDirectorSignature?: boolean;
+  showSeminarRectorSignature?: boolean;
+  fajopaDirectorName?: string;
+  seminarRectorName?: string;
+  fajopaDirectorSignatureUrl?: string;
+  seminarRectorSignatureUrl?: string;
+  hasCustomBg?: boolean;
+  hasFajopaSignature?: boolean;
+  hasRectorSignature?: boolean;
 }
 
 export interface Event {
@@ -59,6 +71,17 @@ export interface Attendance {
   status: "inscrito" | "presente";
   timestamp: string;
   member?: Member;
+}
+
+export interface Notification {
+  id: string;
+  recipientId: string; // The specific memberId or "admin"
+  title: string;
+  message: string;
+  type: "carteirinha" | "inscricao" | "certificado" | "edicao" | "visitante" | "backup" | "sistema";
+  read: boolean;
+  createdAt: string;
+  actionUrl?: string;
 }
 
 export type AvailabilityStatus = "LIVRE" | "OCUPADO" | "CANCELADO";

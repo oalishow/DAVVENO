@@ -2,7 +2,7 @@ import { useState, useEffect, ChangeEvent } from 'react';
 import { createPortal } from 'react-dom';
 import { X, CheckCircle, Search, Image as ImageIcon } from 'lucide-react';
 import { doc, updateDoc } from 'firebase/firestore';
-import { db, appId } from '../lib/firebase';
+import { db, appId, createNotification } from '../lib/firebase';
 import { resizeAndConvertToBase64 } from '../lib/imageUtils';
 import { useSettings } from '../context/SettingsContext';
 import type { Member } from '../types';
@@ -98,6 +98,14 @@ export default function SuggestEditModal({ member, onClose, onSubmitSuccess }: S
       await updateDoc(doc(db, `artifacts/${appId}/public/data/students`, member.id), {
         pendingChanges: pendingChanges,
         hasPendingAction: true
+      });
+
+      // Notification for admin
+      await createNotification({
+        recipientId: "admin",
+        title: "Sugerida Nova Edição",
+        message: `${member.name} enviou uma sugestão de edição de perfil.`,
+        type: "edicao"
       });
 
       // Local onde entra notificação EmailJS extendida

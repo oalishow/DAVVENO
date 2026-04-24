@@ -1,13 +1,25 @@
-import { motion } from 'motion/react';
-import { ShieldCheck, Download, Sun, Moon } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import { ShieldCheck, Download, Sun, Moon, Bell } from 'lucide-react';
 import { APP_VERSION } from '../lib/constants';
 import { useSettings } from '../context/SettingsContext';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { useNotifications } from '../hooks/useNotifications';
+import { markAllNotificationsAsRead, markNotificationAsRead } from '../lib/firebase';
+
+const STUDENT_BOND_KEY = 'davveroId_student_identity';
+const STUDENT_TRACK_KEY = 'davveroId_student_track_ra';
 
 export default function Header() {
   const { settings } = useSettings();
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isDark, setIsDark] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const isMasterLogged = localStorage.getItem('adminMasterLogged') === 'true';
+  const bondedId = localStorage.getItem(STUDENT_BOND_KEY) || localStorage.getItem(STUDENT_TRACK_KEY);
+  const recipientId = isMasterLogged ? "admin" : bondedId ? bondedId : null;
+  const { notifications, unreadCount } = useNotifications(recipientId);
 
   useEffect(() => {
     const handlePrompt = (e: Event) => {
@@ -23,9 +35,17 @@ export default function Header() {
     checkTheme();
     window.addEventListener('themeChange', checkTheme);
     
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setShowDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+
     return () => {
       window.removeEventListener('beforeinstallprompt', handlePrompt);
       window.removeEventListener('themeChange', checkTheme);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
 
@@ -128,6 +148,68 @@ export default function Header() {
   return (
     <div className="text-center relative print:hidden no-print">
       <div className="absolute top-0 right-0 flex items-center gap-2 z-50 no-print print:hidden">
+        {recipientId && (
+          <div className="relative" ref={dropdownRef}>
+            <button 
+              onClick={() => setShowDropdown(!showDropdown)}
+              className="relative p-1.5 bg-slate-100 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:text-sky-500 dark:hover:text-sky-400 transition-colors no-print hover:scale-110 active:scale-95"
+              title="Notificações"
+            >
+              <Bell className="w-4 h-4" />
+              {unreadCount > 0 && (
+                <span className="absolute top-0.5 right-0.5 w-2 h-2 bg-pink-500 rounded-full animate-pulse border border-white dark:border-slate-800"></span>
+              )}
+            </button>
+            <AnimatePresence>
+              {showDropdown && (
+                <motion.div 
+                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                  className="absolute right-0 top-full mt-2 w-72 sm:w-80 bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-700 overflow-hidden z-50 text-left"
+                >
+                  <div className="p-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-800/50">
+                    <h3 className="font-bold text-slate-800 dark:text-white text-xs uppercase tracking-widest">Notificações</h3>
+                    {unreadCount > 0 && (
+                      <button 
+                        onClick={() => recipientId && markAllNotificationsAsRead(recipientId)}
+                        className="text-[10px] text-sky-600 dark:text-sky-400 font-bold hover:underline uppercase"
+                      >
+                        Marcar Lidas
+                      </button>
+                    )}
+                  </div>
+                  <div className="max-h-64 overflow-y-auto w-full flex flex-col p-2 space-y-1">
+                    {notifications.length === 0 ? (
+                      <div className="py-8 text-center text-slate-400 dark:text-slate-500 text-xs">
+                        Nenhuma notificação nova.
+                      </div>
+                    ) : (
+                      notifications.slice(0, 20).map(n => (
+                        <button
+                          key={n.id}
+                          onClick={() => {
+                            if (!n.read) markNotificationAsRead(n.id);
+                            // Se tiver um location para abrir a view devida:
+                            if (n.type === 'edicao') window.location.hash = "admin";
+                          }}
+                          className={`w-full text-left p-2.5 rounded-xl transition-colors flex items-start gap-2.5 ${n.read ? 'opacity-60 hover:bg-slate-50 dark:hover:bg-slate-800' : 'bg-sky-50 dark:bg-sky-900/10 hover:bg-sky-100 dark:hover:bg-sky-900/20'}`}
+                        >
+                          <div className={`mt-1 w-2 h-2 rounded-full shrink-0 ${n.read ? 'bg-transparent' : 'bg-pink-500'}`} />
+                          <div className="flex-1 min-w-0">
+                            <p className={`text-xs ${n.read ? 'font-medium text-slate-700 dark:text-slate-300' : 'font-bold text-slate-900 dark:text-white'}`}>{n.title}</p>
+                            <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-2 leading-tight">{n.message}</p>
+                            <p className="text-[9px] text-slate-400 dark:text-slate-500 mt-1 uppercase">{(new Date(n.createdAt)).toLocaleString('pt-BR')}</p>
+                          </div>
+                        </button>
+                      ))
+                    )}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        )}
         <button 
           onClick={toggleTheme}
           className="p-1.5 bg-slate-100 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:text-sky-500 dark:hover:text-sky-400 transition-colors no-print hover:scale-110 active:scale-95"
@@ -197,3 +279,4 @@ export default function Header() {
     </div>
   );
 }
+

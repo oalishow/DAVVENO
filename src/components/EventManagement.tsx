@@ -227,6 +227,7 @@ export default function EventManagement() {
           event={showCertificateEditor}
           onClose={() => setShowCertificateEditor(null)}
           onSaved={(updatedEvent) => {
+            setEvents(prev => prev.map(e => e.id === updatedEvent.id ? updatedEvent : e));
             setShowCertificateEditor(null);
           }}
         />
@@ -593,10 +594,17 @@ export default function EventManagement() {
                       </button>
                       <button
                         onClick={() => setShowCertificateEditor(event)}
-                        className="flex items-center justify-center gap-1.5 px-3 py-2 sm:py-1.5 hover:bg-white dark:hover:bg-slate-700 text-indigo-600 dark:text-indigo-400 text-xs font-bold rounded-md transition-colors"
+                        className={`flex items-center justify-center gap-1.5 px-3 py-2 sm:py-1.5 hover:bg-white dark:hover:bg-slate-700 text-xs font-bold rounded-md transition-colors ${
+                          event.certificateTemplate?.isApproved 
+                            ? "text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10" 
+                            : "text-indigo-600 dark:text-indigo-400"
+                        }`}
                       >
                         <Award className="w-3.5 h-3.5 shrink-0" />{" "}
                         <span className="truncate">Certificado</span>
+                        {event.certificateTemplate?.isApproved && (
+                          <CheckCircle className="w-3 h-3 text-emerald-500 ml-1" />
+                        )}
                       </button>
                       {event.status === "aberto" && (
                         <button

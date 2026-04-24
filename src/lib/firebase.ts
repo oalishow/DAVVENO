@@ -14,7 +14,7 @@ import {
   setDoc,
   runTransaction,
 } from "firebase/firestore";
-import { Event, Attendance, Member, Availability, Appointment } from "../types";
+import { Event, Attendance, Member, Availability, Appointment, Notification } from "../types";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAldUSOslWbr9sTvg0ePP-8K0A2eBOuHOg",
@@ -134,7 +134,7 @@ export const deleteEvent = async (eventId: string) => {
       `artifacts/${appId}/public/data/students`,
       "_events_global",
     );
-    const docSnap = await getDoc(eventsRef);
+    const docSnap = await getDocFromServer(eventsRef);
     if (docSnap && docSnap.exists()) {
       const data = docSnap.data();
       const list = data.list || [];
@@ -162,14 +162,14 @@ export const restoreEvent = async (eventId: string) => {
       `artifacts/${appId}/public/data/students`,
       "_events_global",
     );
-    const docSnap = await getDoc(eventsRef);
+    const docSnap = await getDocFromServer(eventsRef);
     if (docSnap && docSnap.exists()) {
       const data = docSnap.data();
       const list = data.list || [];
       const idx = list.findIndex((e: any) => e.id === eventId);
       if (idx > -1) {
         list[idx].status = "aberto";
-        list[idx].deletedAt = null;
+        delete list[idx].deletedAt;
         await updateDoc(eventsRef, { list: removeUndefined(list) });
       }
     }
@@ -186,7 +186,7 @@ export const permanentDeleteEvent = async (eventId: string) => {
       `artifacts/${appId}/public/data/students`,
       "_events_global",
     );
-    const docSnap = await getDoc(eventsRef);
+    const docSnap = await getDocFromServer(eventsRef);
     if (docSnap && docSnap.exists()) {
       const data = docSnap.data();
       const list = data.list || [];
@@ -199,7 +199,7 @@ export const permanentDeleteEvent = async (eventId: string) => {
       `artifacts/${appId}/public/data/students`,
       "_attendances_global",
     );
-    const attSnap = await getDoc(attendancesRef);
+    const attSnap = await getDocFromServer(attendancesRef);
     if (attSnap && attSnap.exists()) {
       const attData = attSnap.data();
       const attList = attData.list || [];
@@ -231,6 +231,15 @@ export const closeEvent = async (eventId: string) => {
       const updated = list.map((a) => {
         if (a.eventId === eventId && a.status === "presente") {
           count++;
+          
+          // Notificar o aluno sobre o certificado disponível (disparado em background)
+          createNotification({
+            recipientId: a.studentId,
+            title: "Certificado Disponível",
+            message: `Seu certificado está pronto para download.`,
+            type: "certificado"
+          }).catch(console.error);
+
           return { ...a, status: "apto_para_certificado" as any };
         }
         return a;
@@ -277,20 +286,32 @@ export const updateEvent = async (
   eventData: Partial<Omit<Event, "id">>,
 ) => {
   try {
+    console.log(`Attempting to update event ${eventId}...`);
     const eventsRef = doc(
       db,
       `artifacts/${appId}/public/data/students`,
       "_events_global",
     );
-    const docSnap = await getDocFromServer(eventsRef).catch(() => null);
+    const docSnap = await getDoc(eventsRef).catch((err) => {
+      console.error("Error fetching events doc:", err);
+      return null;
+    });
     if (docSnap && docSnap.exists()) {
       const data = docSnap.data();
       const list = (data.list || []) as Event[];
       const idx = list.findIndex((e: Event) => e.id === eventId);
       if (idx !== -1) {
         list[idx] = { ...list[idx], ...eventData };
+        console.log("Saving updated list to Firestore...");
         await updateDoc(eventsRef, { list: removeUndefined(list) });
+        console.log("Event updated successfully.");
+      } else {
+        console.error(`Event ${eventId} not found in global list.`);
+        throw new Error(`Evento não encontrado para atualização (ID: ${eventId})`);
       }
+    } else {
+      console.error("Global events document does not exist.");
+      throw new Error("Documento global de eventos não encontrado.");
     }
   } catch (e) {
     console.error("Error updating event: ", e);
@@ -358,6 +379,14 @@ export const enrollStudent = async (attendanceData: Omit<Attendance, "id">) => {
       } else {
         transaction.update(attendancesRef, { list: removeUndefined(newList) });
       }
+    });
+
+    // Notificar o aluno
+    await createNotification({
+      recipientId: attendanceData.studentId,
+      title: "Inscrição Confirmada",
+      message: `Sua inscrição no evento foi confirmada com sucesso!`,
+      type: "inscricao"
     });
 
     return attendanceId;
@@ -495,6 +524,15 @@ export const registerVisitor = async (name: string, cpf?: string) => {
       collection(db, `artifacts/${appId}/public/data/students`),
       newVisitor
     );
+    
+    // Notify admins
+    await createNotification({
+      recipientId: "admin",
+      title: "Novo Visitante",
+      message: `O visitante ${name} foi cadastrado.`,
+      type: "visitante"
+    });
+
     return { ...newVisitor, id: docRef.id } as Member;
   } catch (error) {
     console.error("Erro ao registrar visitante:", error);
@@ -527,6 +565,55 @@ export const getMemberByCPF = async (cpf: string): Promise<Member | null> => {
 
 export const findMemberByCPF = getMemberByCPF;
 
+export const createNotification = async (notification: Omit<Notification, "id" | "createdAt" | "read">) => {
+  try {
+    const { collection, addDoc, serverTimestamp } = await import("firebase/firestore");
+    const notificationsRef = collection(db, `artifacts/${appId}/public/data/notifications`);
+    
+    await addDoc(notificationsRef, {
+      ...notification,
+      read: false,
+      createdAt: new Date().toISOString()
+    });
+  } catch (error: any) {
+    if (error?.code !== 'permission-denied' && !error?.message?.includes('Missing or insufficient permissions')) {
+      console.error("Erro ao criar notificação:", error);
+    }
+  }
+};
+
+export const markNotificationAsRead = async (notificationId: string) => {
+  try {
+    const { doc, updateDoc } = await import("firebase/firestore");
+    const notificationRef = doc(db, `artifacts/${appId}/public/data/notifications`, notificationId);
+    await updateDoc(notificationRef, { read: true });
+  } catch (error: any) {
+    if (error?.code !== 'permission-denied' && !error?.message?.includes('Missing or insufficient permissions')) {
+      console.error("Erro ao marcar notificação como lida:", error);
+    }
+  }
+};
+
+export const markAllNotificationsAsRead = async (recipientId: string) => {
+  try {
+    const { collection, query, where, getDocs, writeBatch } = await import("firebase/firestore");
+    const notificationsRef = collection(db, `artifacts/${appId}/public/data/notifications`);
+    const q = query(notificationsRef, where("recipientId", "==", recipientId), where("read", "==", false));
+    
+    const snap = await getDocs(q);
+    if (snap.empty) return;
+
+    const batch = writeBatch(db);
+    snap.docs.forEach((d) => {
+      batch.update(d.ref, { read: true });
+    });
+    await batch.commit();
+  } catch (error: any) {
+    if (error?.code !== 'permission-denied' && !error?.message?.includes('Missing or insufficient permissions')) {
+      console.error("Erro ao marcar todas notificações como lidas:", error);
+    }
+  }
+};
 export const bookAppointment = async (
   availabilityId: string,
   memberId: string,

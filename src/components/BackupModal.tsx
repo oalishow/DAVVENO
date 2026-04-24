@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, ChangeEvent } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Database, Download } from 'lucide-react';
 import { collection, query, getDocs, setDoc, doc, addDoc } from 'firebase/firestore';
-import { db, appId } from '../lib/firebase';
+import { db, appId, createNotification } from '../lib/firebase';
 import type { Member } from '../types';
 
 export default function BackupModal({ onClose }: { onClose: () => void }) {
@@ -27,6 +27,14 @@ export default function BackupModal({ onClose }: { onClose: () => void }) {
       link.download = `DAVVERO-ID_DB_Backup_${new Date().toISOString().split('T')[0]}.json`;
       link.click();
       URL.revokeObjectURL(url);
+
+      await createNotification({
+        recipientId: "admin",
+        title: "Backup Efetuado",
+        message: "Um administrador gerou um backup do sistema.",
+        type: "backup"
+      });
+
       showStatus('Backup descarregado com sucesso!', 'success');
     } catch (e) {
       console.error(e);

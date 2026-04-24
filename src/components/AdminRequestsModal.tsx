@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Check } from 'lucide-react';
 import { collection, query, getDocs, doc, updateDoc, deleteDoc, addDoc } from 'firebase/firestore';
-import { db, appId } from '../lib/firebase';
+import { db, appId, createNotification } from '../lib/firebase';
 import type { Member } from '../types';
 import Modal from './Modal';
 
@@ -66,6 +66,14 @@ export default function AdminRequestsModal({ onClose }: { onClose: () => void })
       });
       fetchRequests();
 
+      // App Notification
+      await createNotification({
+        recipientId: id,
+        title: "Carteirinha Aprovada",
+        message: "Sua solicitação de identidade estudantil foi aprovada!",
+        type: "carteirinha"
+      });
+
       // Email Notification
       await sendEmailNotification(email, "Sua Carteirinha de Estudante Foi Aprovada!", `<h3>Parabéns!</h3><p>Sua solicitação para a identidade estudantil DAVVERO-ID foi <b>Aprovada</b>.</p><p>O seu código de uso no aplicativo é: <b>${alphaCode}</b></p><p>Acesse o portal e valide a sua identidade.</p>`);
     } catch (err) {
@@ -91,6 +99,14 @@ export default function AdminRequestsModal({ onClose }: { onClose: () => void })
 
       await updateDoc(doc(db, `artifacts/${appId}/public/data/students`, member.id), updatePayload);
       fetchRequests();
+
+      // App Notification
+      await createNotification({
+        recipientId: member.id,
+        title: "Edição Aprovada",
+        message: "As edições da sua carteirinha foram aprovadas.",
+        type: "edicao"
+      });
 
       // Email Notification
       if (member.email || updatePayload.email) {
