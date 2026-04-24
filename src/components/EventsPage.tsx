@@ -26,7 +26,7 @@ import type { Event, Attendance, Member } from "../types";
 import PublicAttendeesModal from "./PublicAttendeesModal";
 import Modal from "./Modal";
 
-export default function EventsPage() {
+export default function EventsPage({ onNavigateToStudent }: { onNavigateToStudent?: () => void }) {
   const [events, setEvents] = useState<Event[]>([]);
   const [myAttendances, setMyAttendances] = useState<Attendance[]>([]);
   const [member, setMember] = useState<Member | null>(null);
@@ -40,6 +40,7 @@ export default function EventsPage() {
     message: string;
     onConfirm: () => void;
   } | null>(null);
+  const [showLoginWarning, setShowLoginWarning] = useState(false);
 
   useEffect(() => {
     // Load student if logged in
@@ -104,9 +105,7 @@ export default function EventsPage() {
 
   const handleEnroll = async (eventId: string) => {
     if (!member) {
-      alert(
-        "Por favor, aceda a área 'Minha ID' com seu código e valide o seu acesso primeiro.",
-      );
+      setShowLoginWarning(true);
       return;
     }
     setIsEnrollingInProgress(eventId);
@@ -118,9 +117,21 @@ export default function EventsPage() {
         timestamp: new Date().toISOString(),
       });
       alert("Inscrição realizada com sucesso!");
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      alert("Erro ao realizar inscrição.");
+      if (err.message === "LIMITE_EXCEDIDO") {
+        alert("Desculpe, a lotação para este evento está esgotada.");
+      } else if (err.message === "INSCRICOES_PAUSADAS") {
+        alert("Desculpe, as inscrições para este evento estão pausadas.");
+      } else if (err.message === "INSCRICOES_ENCERRADAS") {
+        alert("Desculpe, as inscrições para este evento já foram encerradas (prazo expirou).");
+      } else if (err.message === "EVENTO_FECHADO") {
+        alert("Desculpe, este evento já está fechado ou encerrado.");
+      } else if (err.message === "EVENTO_EXCLUIDO") {
+        alert("Desculpe, este evento não existe mais.");
+      } else {
+        alert("Erro ao realizar inscrição.");
+      }
     } finally {
       setIsEnrollingInProgress(null);
     }
@@ -191,7 +202,20 @@ export default function EventsPage() {
               (a) =>
                 a.eventId === event.id && a.status !== ("cancelado" as any),
             );
-            const isOpen = event.status === "aberto";
+            const isOpen = event.status === "aberto" && event.status !== "deleted";
+            const isPastDeadline = event.registrationDeadline
+              ? new Date() > new Date(event.registrationDeadline)
+              : false;
+            const isPaused = event.isRegistrationPaused === true;
+            const isDeleted = event.status === "deleted";
+            
+            const canEnroll = isOpen && !isPastDeadline && !isPaused && !isDeleted;
+
+            let cannotEnrollReason = "";
+            if (isDeleted) cannotEnrollReason = "Evento Excluído";
+            else if (isPaused) cannotEnrollReason = "Inscrições Pausadas";
+            else if (isPastDeadline) cannotEnrollReason = "Inscrições Encerradas";
+            else if (!isOpen) cannotEnrollReason = "Evento Fechado";
 
             return (
               <div
@@ -307,42 +331,41 @@ export default function EventsPage() {
                     >
                       <Users className="w-3.5 h-3.5" /> Ver Inscritos
                     </button>
-                    {isOpen ? (
-                      enrolled ? (
-                        <div className="flex flex-col gap-2">
-                          <div className="flex flex-col items-center justify-center p-3 sm:px-2 bg-emerald-50 dark:bg-emerald-500/10 rounded-xl border border-emerald-200 dark:border-emerald-500/20 text-center">
-                            <UserCheck className="w-5 h-5 text-emerald-500 mb-1" />
-                            <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-tight">
-                              Inscrito
-                            </span>
-                          </div>
+                    {enrolled ? (
+                      <div className="flex flex-col gap-2">
+                        <div className="flex flex-col items-center justify-center p-3 sm:px-2 bg-emerald-50 dark:bg-emerald-500/10 rounded-xl border border-emerald-200 dark:border-emerald-500/20 text-center">
+                          <UserCheck className="w-5 h-5 text-emerald-500 mb-1" />
+                          <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-tight">
+                            {enrolled.status === "presente" || enrolled.status === "apto_para_certificado" ? "Participou" : "Inscrito"}
+                          </span>
+                        </div>
+                        {isOpen && !isDeleted && (
                           <button
                             onClick={() => handleUnenroll(event.id, member.id)}
                             className="w-full py-1.5 bg-rose-50 hover:bg-rose-100 dark:bg-rose-500/10 dark:hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 rounded-lg text-[10px] font-bold uppercase transition-colors flex items-center justify-center gap-1 border border-rose-200 dark:border-rose-500/20"
                           >
                             <Ban className="w-3 h-3" /> Cancelar
                           </button>
-                        </div>
-                      ) : (
-                        <button
-                          onClick={() => handleEnroll(event.id)}
-                          disabled={isEnrollingInProgress === event.id}
-                          className="w-full h-full min-h-[44px] sm:min-h-0 bg-sky-600 hover:bg-sky-500 disabled:opacity-50 text-white rounded-xl text-xs font-bold transition-all hover:scale-105 active:scale-95 shadow-sm hover:shadow-md flex items-center justify-center cursor-pointer"
-                        >
-                          {isEnrollingInProgress === event.id
-                            ? "Aguarde..."
-                            : "Inscrever-me"}
-                        </button>
-                      )
+                        )}
+                      </div>
+                    ) : canEnroll ? (
+                      <button
+                        onClick={() => handleEnroll(event.id)}
+                        disabled={isEnrollingInProgress === event.id}
+                        className={`w-full h-full min-h-[44px] sm:min-h-0 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center justify-center cursor-pointer ${
+                          isEnrollingInProgress === event.id
+                            ? "bg-slate-400 opacity-70 cursor-not-allowed scale-100"
+                            : "bg-sky-600 hover:bg-sky-500 hover:scale-105 active:scale-95 hover:shadow-md"
+                        }`}
+                      >
+                        {isEnrollingInProgress === event.id
+                          ? "Aguarde..."
+                          : "Inscrever-me"}
+                      </button>
                     ) : (
                       <div className="flex flex-col items-center justify-center p-3 sm:px-2 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 text-center h-full">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                          {enrolled
-                            ? enrolled.status === "presente" ||
-                              enrolled.status === "apto_para_certificado"
-                              ? "Participou"
-                              : "Finalizado"
-                            : "Encerrado"}
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest text-balance leading-tight">
+                          {cannotEnrollReason || "Encerrado"}
                         </span>
                       </div>
                     )}
@@ -363,6 +386,23 @@ export default function EventsPage() {
       >
         <p className="text-slate-600 dark:text-slate-400">
           {confirmModal?.message}
+        </p>
+      </Modal>
+
+      <Modal
+        isOpen={showLoginWarning}
+        onClose={() => setShowLoginWarning(false)}
+        title="Ação Necessária"
+        confirmLabel="Ir para MINHA ID"
+        onConfirm={() => {
+          setShowLoginWarning(false);
+          if (onNavigateToStudent) {
+            onNavigateToStudent();
+          }
+        }}
+      >
+        <p className="text-slate-600 dark:text-slate-400 py-4 font-medium text-center">
+          Para se inscrever em eventos, você precisa vincular sua identidade na aba <strong>MINHA ID</strong> primeiro.
         </p>
       </Modal>
     </div>

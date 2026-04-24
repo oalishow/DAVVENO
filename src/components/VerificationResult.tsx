@@ -244,7 +244,28 @@ export default function VerificationResult({
         </motion.div>
       )}
 
-      {isMyID && status === "VALID" && member ? (
+      {status === "VALID" && member?.roles?.includes("VISITANTE") ? (
+        <div id="validation-card-capture" className="w-full max-w-sm bg-white dark:bg-slate-900 rounded-[2rem] p-8 border-2 border-slate-200 dark:border-slate-800 shadow-xl flex flex-col items-center animate-success-pop text-center space-y-6">
+          <div>
+            <h3 className="text-xs font-black text-emerald-500 uppercase tracking-widest mb-2">Passe Visitante</h3>
+            <p className="text-2xl font-bold text-slate-800 dark:text-white leading-tight">{safeName}</p>
+          </div>
+          
+          <div className="bg-white p-3 rounded-2xl border-2 border-slate-100 shadow-sm">
+            <QRCodeSVG
+              value={`${cleanBaseUrl}?verify=${member.alphaCode}`}
+              size={180}
+              level="H"
+              includeMargin={true}
+            />
+          </div>
+          
+          <div>
+            <p className="text-[10px] text-slate-400 uppercase tracking-widest font-semibold mb-1">Código de Uso</p>
+            <p className="text-xl font-black text-slate-700 dark:text-slate-300 tracking-[0.2em]">{member?.alphaCode}</p>
+          </div>
+        </div>
+      ) : isMyID && status === "VALID" && member ? (
         <div
           id="validation-card-capture"
           className="w-full mb-4 max-w-[320px] sm:max-w-[600px] pointer-events-auto @container"
@@ -504,10 +525,10 @@ export default function VerificationResult({
         )}
       </div>
       <div className="flex flex-col w-full max-w-sm mt-2 no-print print:hidden space-y-2">
-        {(isMyID || member?.roles?.includes("VISITANTE")) && member?.alphaCode && (
+        {isMyID && member?.alphaCode && (
            <div className="flex flex-col items-center justify-center p-6 bg-white dark:bg-slate-900 rounded-3xl shadow-lg border-2 border-slate-200 dark:border-slate-800 mb-2 mt-2">
               <h3 className="text-sm font-black text-slate-800 dark:text-white uppercase tracking-widest mb-4">
-                {member?.roles?.includes("VISITANTE") ? "QR Code Visitante" : "Escaneie-me"}
+                Escaneie-me
               </h3>
               <div className="bg-white p-2 rounded-xl border-2 border-slate-200">
                   <QRCodeSVG

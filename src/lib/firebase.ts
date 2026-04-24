@@ -125,27 +125,66 @@ export const deleteEvent = async (eventId: string) => {
       `artifacts/${appId}/public/data/students`,
       "_events_global",
     );
-    // Use getDoc instead of getDocFromServer and remove .catch(() => null) to avoid silent failures
+    const docSnap = await getDoc(eventsRef);
+    if (docSnap && docSnap.exists()) {
+      const data = docSnap.data();
+      const list = data.list || [];
+      const idx = list.findIndex((e: any) => e.id === eventId);
+      if (idx > -1) {
+        list[idx].status = "deleted";
+        list[idx].deletedAt = new Date().toISOString();
+        await updateDoc(eventsRef, { list });
+      }
+      console.log(`Event ${eventId} soft-deleted successfully.`);
+    } else {
+      console.log(`Failed to delete event ${eventId}: global document does not exist.`);
+      throw new Error(`Failed to delete event: Document does not exist. (Id: ${eventId})`);
+    }
+  } catch (e) {
+    console.error("Error deleting event: ", e);
+    throw e;
+  }
+};
+
+export const restoreEvent = async (eventId: string) => {
+  try {
+    const eventsRef = doc(
+      db,
+      `artifacts/${appId}/public/data/students`,
+      "_events_global",
+    );
+    const docSnap = await getDoc(eventsRef);
+    if (docSnap && docSnap.exists()) {
+      const data = docSnap.data();
+      const list = data.list || [];
+      const idx = list.findIndex((e: any) => e.id === eventId);
+      if (idx > -1) {
+        list[idx].status = "aberto";
+        list[idx].deletedAt = null;
+        await updateDoc(eventsRef, { list });
+      }
+    }
+  } catch (e) {
+    console.error("Error restoring event: ", e);
+    throw e;
+  }
+};
+
+export const permanentDeleteEvent = async (eventId: string) => {
+  try {
+    const eventsRef = doc(
+      db,
+      `artifacts/${appId}/public/data/students`,
+      "_events_global",
+    );
     const docSnap = await getDoc(eventsRef);
     if (docSnap && docSnap.exists()) {
       const data = docSnap.data();
       const list = data.list || [];
       const updatedList = list.filter((e: any) => e.id !== eventId);
       await updateDoc(eventsRef, { list: updatedList });
-
-      console.log(
-        `Event ${eventId} deleted successfully. Updated list size: ${updatedList.length}`,
-      );
-    } else {
-      console.log(
-        `Failed to delete event ${eventId}: global document does not exist.`,
-      );
-      throw new Error(
-        `Failed to delete event: Document does not exist. (Id: ${eventId})`,
-      );
     }
 
-    // Also remove related attendances
     const attendancesRef = doc(
       db,
       `artifacts/${appId}/public/data/students`,
@@ -161,7 +200,7 @@ export const deleteEvent = async (eventId: string) => {
       }
     }
   } catch (e) {
-    console.error("Error deleting event: ", e);
+    console.error("Error permanently deleting event: ", e);
     throw e;
   }
 };
@@ -251,23 +290,65 @@ export const updateEvent = async (
 
 export const enrollStudent = async (attendanceData: Omit<Attendance, "id">) => {
   try {
+    const { runTransaction } = await import("firebase/firestore");
     const attendancesRef = doc(
       db,
       `artifacts/${appId}/public/data/students`,
       "_attendances_global",
     );
+    const eventsRef = doc(
+      db,
+      `artifacts/${appId}/public/data/students`,
+      "_events_global",
+    );
+    
     const attendanceId = "att_" + Date.now().toString();
     const attendanceItem = { ...attendanceData, id: attendanceId };
 
-    const docSnap = await getDocFromServer(attendancesRef).catch(() => null);
-    if (docSnap && docSnap.exists()) {
-      const data = docSnap.data();
-      const list = data.list || [];
-      list.push(attendanceItem);
-      await updateDoc(attendancesRef, { list });
-    } else {
-      await setDoc(attendancesRef, { list: [attendanceItem] });
-    }
+    await runTransaction(db, async (transaction) => {
+      const attendancesDoc = await transaction.get(attendancesRef);
+      const eventsDoc = await transaction.get(eventsRef);
+
+      const eventsData = eventsDoc.data()?.list || [];
+      const eventInfo = eventsData.find((e: any) => e.id === attendanceData.eventId);
+
+      if (!eventInfo) {
+         throw new Error("EVENTO_NAO_ENCONTRADO");
+      }
+      
+      const isPastDeadline = eventInfo.registrationDeadline
+        ? new Date() > new Date(eventInfo.registrationDeadline)
+        : false;
+
+      if (eventInfo.status === "deleted") {
+         throw new Error("EVENTO_EXCLUIDO");
+      }
+      if (eventInfo.isRegistrationPaused) {
+         throw new Error("INSCRICOES_PAUSADAS");
+      }
+      if (isPastDeadline) {
+         throw new Error("INSCRICOES_ENCERRADAS");
+      }
+      if (eventInfo.status !== "aberto") {
+         throw new Error("EVENTO_FECHADO");
+      }
+
+      const attData = attendancesDoc.data()?.list || [];
+      const currentEnrolledCount = attData.filter((a: any) => a.eventId === attendanceData.eventId && a.status !== "cancelado").length;
+
+      if (eventInfo?.maxParticipants && currentEnrolledCount >= eventInfo.maxParticipants) {
+         throw new Error("LIMITE_EXCEDIDO");
+      }
+      
+      const newList = [...attData, attendanceItem];
+      
+      if (!attendancesDoc.exists()) {
+        transaction.set(attendancesRef, { list: newList });
+      } else {
+        transaction.update(attendancesRef, { list: newList });
+      }
+    });
+
     return attendanceId;
   } catch (e) {
     console.error("Error adding attendance: ", e);
@@ -379,11 +460,20 @@ export const getEventSubscribers = async (
 
 export const registerVisitor = async (name: string, cpf?: string) => {
   try {
+    const cleanCPF = cpf ? cpf.replace(/\D/g, "") : "";
+    if (cleanCPF) {
+      const existingMember = await getMemberByCPF(cleanCPF);
+      if (existingMember) {
+        throw new Error("Membro ou visitante já cadastrado com este CPF.");
+      }
+    }
+
     const newVisitor: Omit<Member, "id"> = {
       name,
-      cpf: cpf || "",
+      cpf: cleanCPF,
       roles: ["VISITANTE"],
       isActive: true,
+      status: "VALID",
       alphaCode: Math.random().toString(36).substring(2, 8).toUpperCase(),
       createdAt: new Date().toISOString(),
     };
@@ -401,13 +491,16 @@ export const registerVisitor = async (name: string, cpf?: string) => {
   }
 };
 
-export const findMemberByCPF = async (cpf: string): Promise<Member | null> => {
+export const getMemberByCPF = async (cpf: string): Promise<Member | null> => {
   if (!cpf) return null;
+  const cleanCPF = cpf.replace(/\D/g, "");
+  if (!cleanCPF) return null;
+  
   try {
     const { getDocs, query, collection, where } = await import("firebase/firestore");
     const q = query(
       collection(db, `artifacts/${appId}/public/data/students`),
-      where("cpf", "==", cpf)
+      where("cpf", "==", cleanCPF)
     );
     const snap = await getDocs(q);
     if (!snap.empty) {
@@ -420,3 +513,5 @@ export const findMemberByCPF = async (cpf: string): Promise<Member | null> => {
     return null;
   }
 };
+
+export const findMemberByCPF = getMemberByCPF;

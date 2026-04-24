@@ -19,6 +19,7 @@ export default function EventAttendeesModal({
   >([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [activeTab, setActiveTab] = useState<"alunos" | "visitantes">("alunos");
   const [confirmModal, setConfirmModal] = useState<{
     isOpen: boolean;
     message: string;
@@ -85,11 +86,71 @@ export default function EventAttendeesModal({
     });
   };
 
-  const handlePrint = () => {
-    const printContent = document.getElementById("print-area")?.innerHTML;
-    if (!printContent) return;
+  const handlePrint = (filterType: "all" | "alunos" | "visitantes") => {
+    let toPrint = attendees;
+    let titleAddon = "Geral";
+    
+    if (filterType === "alunos") {
+      toPrint = attendees.filter(a => !a.member?.roles?.includes("VISITANTE"));
+      titleAddon = "Categoria: Alunos / Seminaristas";
+    } else if (filterType === "visitantes") {
+      toPrint = attendees.filter(a => !!a.member?.roles?.includes("VISITANTE"));
+      titleAddon = "Categoria: Visitantes";
+    }
+  
+    // We update the DOM directly before printing inside the invisible area, or just dynamically build HTML
     const printWindow = window.open("", "_blank");
     if (printWindow) {
+      let trs = "";
+      toPrint.forEach((sub, idx) => {
+        const rolesText = [
+          ...(sub.member?.roles || []),
+          sub.member?.diocese ? `Diocese: ${sub.member?.diocese}` : ""
+        ].filter(Boolean).join(" • ");
+
+        trs += `
+          <tr>
+            <td class="border border-black p-2 text-center font-bold">${idx + 1}</td>
+            <td class="border border-black p-2 uppercase font-semibold">${sub.member?.name || "Desconhecido"}</td>
+            <td class="border border-black p-2 text-center">${sub.member?.ra || (sub.member as any)?.cpf || "-"}</td>
+            <td class="border border-black p-2 text-[10px] uppercase">${rolesText}</td>
+            <td class="border border-black p-2 align-bottom">
+              <div class="w-full h-8 border-b border-black border-dashed opacity-50"></div>
+            </td>
+          </tr>
+        `;
+      });
+
+      const printContent = `
+        <div class="text-center mb-6">
+          <h2 class="text-xl font-black uppercase tracking-widest border-b-2 border-black pb-2">
+            Lista Oficial de Presença
+          </h2>
+          <p class="text-sm font-bold mt-2 uppercase">${event?.title}</p>
+          <p class="text-xs font-semibold mt-1 bg-gray-200 inline-block px-2 py-0.5 rounded">${titleAddon}</p>
+          <p class="text-xs mt-1">
+            Data de Início: ${event?.startDate ? new Date(event.startDate).toLocaleDateString("pt-BR") : "N/D"}
+          </p>
+        </div>
+        <table class="w-full border-collapse border border-black text-xs">
+          <thead>
+            <tr class="bg-gray-100">
+              <th class="border border-black p-2 w-8 text-center">#</th>
+              <th class="border border-black p-2 text-left">NOME DO INSCRITO</th>
+              <th class="border border-black p-2 w-24 text-center">R.A. / CPF</th>
+              <th class="border border-black p-2 text-left">VÍNCULO / DIOCESE</th>
+              <th class="border border-black p-2 w-48 text-center">ASSINATURA DO INSCRITO</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${trs}
+          </tbody>
+        </table>
+        <div class="mt-8 pt-4 border-t border-black text-center text-[10px] uppercase tracking-widest">
+          Documento Gerado pelo DAVVERO-ID • Faculdade João Paulo II (FAJOPA)
+        </div>
+      `;
+
       printWindow.document.write(`
         <html>
           <head>
@@ -113,6 +174,11 @@ export default function EventAttendeesModal({
               .text-xl { font-size: 20px; }
               .text-sm { font-size: 14px; }
               .text-xs { font-size: 12px; }
+              .inline-block { display: inline-block; }
+              .px-2 { padding-left: 8px; padding-right: 8px; }
+              .py-0\\.5 { padding-top: 2px; padding-bottom: 2px; }
+              .rounded { border-radius: 4px; }
+              .bg-gray-200 { background-color: #e5e7eb; }
             </style>
           </head>
           <body>
@@ -131,17 +197,25 @@ export default function EventAttendeesModal({
   };
 
   const filteredAttendees = attendees.filter((a) => {
-    if (!searchTerm) return true;
+    let matchTab = true;
+    if (activeTab === "alunos") {
+      matchTab = !a.member?.roles?.includes("VISITANTE");
+    } else if (activeTab === "visitantes") {
+      matchTab = !!a.member?.roles?.includes("VISITANTE");
+    }
+
+    if (!searchTerm) return matchTab;
     const term = searchTerm.toLowerCase();
-    return (
+    return matchTab && (
       a.member?.name.toLowerCase().includes(term) ||
-      a.member?.ra?.toLowerCase().includes(term)
+      a.member?.ra?.toLowerCase().includes(term) ||
+      (a.member as any)?.cpf?.includes(term) // in case visitors use cpf
     );
   });
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm px-4 print:static print:bg-transparent print:p-0">
-      <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden border border-slate-200 dark:border-slate-700/50 flex flex-col max-h-[90vh] print:hidden">
+      <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-3xl overflow-hidden border border-slate-200 dark:border-slate-700/50 flex flex-col max-h-[95vh] print:hidden">
         <div className="p-6 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-800/20">
           <div>
             <h3 className="text-xl font-black text-slate-800 dark:text-white">
@@ -159,38 +233,64 @@ export default function EventAttendeesModal({
           </button>
         </div>
 
-        <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
-          <div className="relative flex-1">
+        <div className="flex bg-slate-100 dark:bg-slate-800/50 p-1 mx-4 mt-4 rounded-xl">
+          <button
+            onClick={() => setActiveTab("alunos")}
+            className={`flex-1 py-2 text-sm font-bold rounded-lg transition-colors ${
+              activeTab === "alunos"
+                ? "bg-white dark:bg-slate-700 text-sky-600 dark:text-sky-400 shadow-sm"
+                : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+            }`}
+          >
+            Alunos / Seminaristas
+          </button>
+          <button
+            onClick={() => setActiveTab("visitantes")}
+            className={`flex-1 py-2 text-sm font-bold rounded-lg transition-colors ${
+              activeTab === "visitantes"
+                ? "bg-white dark:bg-slate-700 text-sky-600 dark:text-sky-400 shadow-sm"
+                : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"
+            }`}
+          >
+            Visitantes
+          </button>
+        </div>
+
+        <div className="px-4 py-3 border-b border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="relative w-full sm:flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input
               type="text"
-              placeholder="Pesquisar por nome ou RA..."
+              placeholder="Pesquisar por nome, RA ou CPF..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl pl-10 pr-4 py-2.5 text-sm outline-none focus:border-sky-500 dark:focus:border-sky-500 text-slate-700 dark:text-slate-200"
             />
           </div>
-          <button
-            onClick={handlePrint}
-            className="print:hidden ml-4 flex items-center gap-2 bg-slate-800 text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-slate-700 transition-colors shrink-0"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
+          <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
+            <div className="text-[10px] font-bold text-slate-400 uppercase mr-1 whitespace-nowrap">Imprimir:</div>
+            <button
+              onClick={() => handlePrint("all")}
+              className="print:hidden whitespace-nowrap flex items-center justify-center gap-1.5 bg-slate-800 text-white px-3 py-2 rounded-lg text-xs font-bold hover:bg-slate-700 transition-colors shrink-0"
+              title="Lista de Presença Completa"
             >
-              <polyline points="6 9 6 2 18 2 18 9"></polyline>
-              <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
-              <rect x="6" y="14" width="12" height="8"></rect>
-            </svg>
-            Imprimir Lista de Check-in
-          </button>
+              Tudo
+            </button>
+            <button
+              onClick={() => handlePrint("alunos")}
+              className="print:hidden whitespace-nowrap flex items-center justify-center gap-1.5 bg-slate-800 text-white px-3 py-2 rounded-lg text-xs font-bold hover:bg-slate-700 transition-colors shrink-0"
+              title="Apenas Alunos e Seminaristas"
+            >
+              Alunos
+            </button>
+            <button
+              onClick={() => handlePrint("visitantes")}
+              className="print:hidden whitespace-nowrap flex items-center justify-center gap-1.5 bg-slate-800 text-white px-3 py-2 rounded-lg text-xs font-bold hover:bg-slate-700 transition-colors shrink-0"
+              title="Apenas Visitantes"
+            >
+              Visitantes
+            </button>
+          </div>
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-slate-50/30 dark:bg-slate-900/30">
@@ -227,6 +327,7 @@ export default function EventAttendeesModal({
                       </h4>
                       <div className="text-[10px] text-slate-500 dark:text-slate-400 font-medium mt-1 flex flex-wrap gap-x-2 gap-y-1">
                         {a.member?.ra && <span>RA: {a.member.ra}</span>}
+                        {(a.member as any)?.cpf && <span>CPF: {(a.member as any).cpf}</span>}
                         {a.member?.alphaCode && (
                           <span>ID: {a.member.alphaCode}</span>
                         )}
@@ -339,7 +440,7 @@ export default function EventAttendeesModal({
                   {sub.member?.name}
                 </td>
                 <td className="border border-black p-2 text-center">
-                  {sub.member?.ra || "-"}
+                  {sub.member?.ra || (sub.member as any)?.cpf || "-"}
                 </td>
                 <td className="border border-black p-2 text-[10px] uppercase">
                   {sub.member?.roles?.join(", ")}{" "}

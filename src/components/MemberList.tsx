@@ -7,7 +7,7 @@ import { CUSTOM_ROLES_KEY } from '../lib/constants';
 import MemberEditModal from './MemberEditModal';
 
 interface MemberListProps {
-  initialFilterStatus?: 'all' | 'active' | 'inactive';
+  initialFilterStatus?: 'all' | 'active' | 'inactive' | 'visitor';
 }
 
 export default function MemberList({ initialFilterStatus = 'all' }: MemberListProps) {
@@ -18,7 +18,7 @@ export default function MemberList({ initialFilterStatus = 'all' }: MemberListPr
   // Filtros
   const [searchTerm, setSearchTerm] = useState('');
   const [filterRole, setFilterRole] = useState('');
-  const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'inactive'>(initialFilterStatus);
+  const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'inactive' | 'visitor'>(initialFilterStatus);
 
   const [customRoles, setCustomRoles] = useState<string[]>(() => {
     try {
@@ -69,6 +69,7 @@ export default function MemberList({ initialFilterStatus = 'all' }: MemberListPr
     let matchStatus = true;
     if (filterStatus === 'active') matchStatus = m.isActive;
     if (filterStatus === 'inactive') matchStatus = !m.isActive;
+    if (filterStatus === 'visitor') matchStatus = !!m.roles?.includes("VISITANTE");
 
     return matchSearch && matchFilterRole && matchStatus;
   });
@@ -102,12 +103,13 @@ export default function MemberList({ initialFilterStatus = 'all' }: MemberListPr
           </div>
           <select 
             value={filterStatus} 
-            onChange={(e) => setFilterStatus(e.target.value as 'all' | 'active' | 'inactive')}
+            onChange={(e) => setFilterStatus(e.target.value as 'all' | 'active' | 'inactive' | 'visitor')}
             className="input-modern w-full sm:w-32 pl-10 pr-4 py-2.5 rounded-xl text-sm appearance-none"
           >
             <option value="all">Status: Todos</option>
             <option value="active">Status: Ativo</option>
             <option value="inactive">Status: Inativo</option>
+            <option value="visitor">Status: Visitantes</option>
           </select>
         </div>
         <div className="relative w-full sm:w-auto">

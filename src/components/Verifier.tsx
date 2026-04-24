@@ -508,8 +508,12 @@ export default function Verifier({
     try {
       const found = await findMemberByCPF(visitorCPF.trim());
       if (found) {
-        setValidationResult({ member: found, status: "VALID" });
-        setSuccessMsg("Visitante encontrado.");
+        if (!found.roles?.includes("VISITANTE")) {
+          alert(`Encontramos um membro (${found.name}) que já possui cadastro como Aluno/Colaborador. Sugerimos a verificação via QR Code padrão.`);
+        } else {
+          setValidationResult({ member: found, status: "VALID" });
+          setSuccessMsg("Visitante encontrado.");
+        }
       } else {
         alert("Visitante não encontrado com este CPF.");
       }
@@ -529,7 +533,8 @@ export default function Verifier({
     try {
       const newMember = await registerVisitor(visitorName.trim(), visitorCPF.trim());
       setSuccessMsg("Visitante cadastrado com sucesso!");
-      setValidationResult({ member: newMember, status: "VALID" });
+      alert(`Visitante cadastrado com sucesso!\n\nCódigo de Uso (AlphaCode): ${newMember?.alphaCode}`);
+      setValidationResult({ member: newMember || null, status: "VALID" });
       setVisitorName("");
       setVisitorCPF("");
       setShowVisitorRegisterModal(false);
@@ -872,6 +877,16 @@ export default function Verifier({
                         value={visitorName}
                         onChange={(e) => setVisitorName(e.target.value)}
                         placeholder="Nome do Visitante"
+                        className="w-full rounded-xl py-2.5 px-4 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 outline-none focus:border-sky-500"
+                      />
+                   </div>
+                   <div>
+                     <label className="block text-xs font-bold text-slate-500 uppercase ml-1 mb-1">CPF</label>
+                     <input
+                        type="text"
+                        value={visitorCPF}
+                        onChange={(e) => setVisitorCPF(e.target.value)}
+                        placeholder="000.000.000-00 (Apenas os 11 números)"
                         className="w-full rounded-xl py-2.5 px-4 text-sm bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 outline-none focus:border-sky-500"
                       />
                    </div>

@@ -313,7 +313,7 @@ export default function App() {
                     />
                   )}
                   {activeTab === "admin" && <Admin />}
-                  {activeTab === "events" && <EventsPage />}
+                  {activeTab === "events" && <EventsPage onNavigateToStudent={() => setActiveTab("student")} />}
                   {activeTab === "student" && (
                     <StudentPortal
                       overrideCode={adminForceViewCode}

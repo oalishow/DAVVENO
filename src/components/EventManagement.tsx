@@ -448,7 +448,7 @@ export default function EventManagement() {
         {events.filter((e) => {
           const searchLower = eventSearchQuery.toLowerCase();
           const matchesSearch = e.title.toLowerCase().includes(searchLower) || e.description.toLowerCase().includes(searchLower);
-          const matchesFilter = filterStatus === "todos" || e.status === filterStatus;
+          const matchesFilter = (filterStatus === "todos" && e.status !== "deleted") || e.status === filterStatus;
           return matchesFilter && matchesSearch;
         }).length === 0 ? (
           <p className="text-sm text-slate-500 dark:text-slate-400 text-center py-6">
@@ -460,7 +460,7 @@ export default function EventManagement() {
               .filter((e) => {
                 const searchLower = eventSearchQuery.toLowerCase();
                 const matchesSearch = e.title.toLowerCase().includes(searchLower) || e.description.toLowerCase().includes(searchLower);
-                const matchesFilter = filterStatus === "todos" || e.status === filterStatus;
+                const matchesFilter = (filterStatus === "todos" && e.status !== "deleted") || e.status === filterStatus;
                 return matchesFilter && matchesSearch;
               })
               .map((event) => (
@@ -542,11 +542,6 @@ export default function EventManagement() {
                             variant: "danger",
                             onConfirm: () => {
                               deleteEvent(event.id)
-                                .then(() => {
-                                  setEvents(
-                                    events.filter((e) => e.id !== event.id),
-                                  );
-                                })
                                 .catch((e) => alert(e.message));
                             },
                           });

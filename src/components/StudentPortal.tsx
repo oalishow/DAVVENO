@@ -119,7 +119,10 @@ export default function StudentPortal({
   }, [member]);
 
   const handleEnroll = async (eventId: string) => {
-    if (!member) return;
+    if (!member) {
+      alert("Ação Necessária: Por favor, vincule sua carteirinha ou faça login no portal 'MINHA ID' para se inscrever neste evento.");
+      return;
+    }
     setIsEnrollingInProgress(eventId);
     try {
       await enrollStudent({
@@ -235,11 +238,25 @@ export default function StudentPortal({
     await new Promise((resolve) => setTimeout(resolve, 3000));
 
     try {
-      const q = query(
-        collection(db, `artifacts/${appId}/public/data/students`),
-        where("alphaCode", "==", alphaCode.toUpperCase()),
-        limit(1),
-      );
+      let q;
+      const cleanInput = alphaCode.trim();
+      const onlyNumbers = cleanInput.replace(/\D/g, "");
+      const isCPF = /^\d{11}$/.test(onlyNumbers);
+
+      if (isCPF) {
+        q = query(
+          collection(db, `artifacts/${appId}/public/data/students`),
+          where("cpf", "==", onlyNumbers),
+          limit(1),
+        );
+      } else {
+        q = query(
+          collection(db, `artifacts/${appId}/public/data/students`),
+          where("alphaCode", "==", cleanInput.toUpperCase()),
+          limit(1),
+        );
+      }
+
       const snapshot = await getDocs(q);
       if (!snapshot.empty) {
         const data = snapshot.docs[0].data() as Member;
@@ -249,7 +266,7 @@ export default function StudentPortal({
         setLinkMode(false);
         setPinMode("create");
       } else {
-        setError("Código não encontrado na base de dados.");
+        setError(isCPF ? "CPF não encontrado na base de dados." : "Código não encontrado na base de dados.");
       }
     } catch (err) {
       setError("Erro ao vincular identidade.");
@@ -394,11 +411,14 @@ export default function StudentPortal({
     if (isOverrideMode) return;
     localStorage.removeItem(STUDENT_BOND_KEY);
     localStorage.removeItem(STUDENT_FALLBACK_PIN);
+    localStorage.removeItem("davveroId_student_identity"); // clear the specific key requested if its different
     setBondedId(null);
     setMember(null);
     setIsUnlocked(false);
     setModalUnlinkOpen(false);
     setPinMode("none");
+    if (onOverrideConsumed) onOverrideConsumed();
+    window.location.reload();
   };
 
   if (isLoading && !isProcessingAnimation && !isGenerating) {
@@ -937,17 +957,16 @@ export default function StudentPortal({
                 <>
                   <QrCode className="w-12 h-12 text-slate-400 mb-6" />
                   <h3 className="text-lg font-black uppercase tracking-tight text-slate-800 dark:text-white mb-2">
-                    Código de Uso
+                    Código de Uso ou CPF
                   </h3>
                   <p className="text-xs text-slate-500 text-center mb-6">
-                    Digite o seu código alfanumérico para carregar seus dados no
-                    dispositivo.
+                    Digite o seu código alfanumérico ou os 11 dígitos numéricos do seu CPF para carregar seus dados no dispositivo.
                   </p>
 
                   <input
                     type="text"
                     autoCapitalize="characters"
-                    placeholder="Ex: XXXX-YYYY"
+                    placeholder="Ex: XXXX-YYYY ou CPF"
                     value={alphaCode}
                     onChange={(e) => setAlphaCode(e.target.value.toUpperCase())}
                     className="text-center text-xl tracking-widest font-bold w-full py-4 px-6 rounded-xl bg-slate-50 dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 outline-none text-slate-900 dark:text-white uppercase focus:border-sky-500 transition-colors"

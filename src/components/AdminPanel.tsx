@@ -28,7 +28,7 @@ import {
   where,
   Timestamp,
 } from "firebase/firestore";
-import { db, appId, auth } from "../lib/firebase";
+import { db, appId, auth, registerVisitor } from "../lib/firebase";
 import { signOut } from "firebase/auth";
 import type { Member } from "../types";
 import { useSettings } from "../context/SettingsContext";
@@ -41,11 +41,12 @@ import AdminRequestsModal from "./AdminRequestsModal";
 import ImageCropperModal from "./ImageCropperModal";
 import PrintReportModal from "./PrintReportModal";
 import EventManagement from "./EventManagement";
+import EventsRecycleBin from "./EventsRecycleBin";
 import { Calendar } from "lucide-react";
 
 export default function AdminPanel({ onLogout }: { onLogout: () => void }) {
   const { settings, updateSettings } = useSettings();
-  const [activeTab, setActiveTab] = useState<"members" | "events">("members");
+  const [activeTab, setActiveTab] = useState<"members" | "events" | "events_trash">("members");
   const [name, setName] = useState("");
   const [ra, setRa] = useState("");
   const [cpf, setCpf] = useState("");
@@ -60,6 +61,9 @@ export default function AdminPanel({ onLogout }: { onLogout: () => void }) {
   const [roles, setRoles] = useState<string[]>([]);
   const [course, setCourse] = useState("");
   const [diocese, setDiocese] = useState("");
+  
+  const [visitorName, setVisitorName] = useState("");
+  const [visitorCpf, setVisitorCpf] = useState("");
 
   const [photoBase64, setPhotoBase64] = useState<string | null>(null);
   const [cropImageSrc, setCropImageSrc] = useState<string | null>(null);
@@ -70,7 +74,7 @@ export default function AdminPanel({ onLogout }: { onLogout: () => void }) {
   } | null>(null);
   const [showList, setShowList] = useState(false);
   const [listFilterStatus, setListFilterStatus] = useState<
-    "all" | "active" | "inactive"
+    "all" | "active" | "inactive" | "visitor"
   >("all");
   const [showSettings, setShowSettings] = useState(false);
   const [showBin, setShowBin] = useState(false);
@@ -248,7 +252,7 @@ export default function AdminPanel({ onLogout }: { onLogout: () => void }) {
   }, [settings.version]);
 
   const handleLogoutAdmin = async () => {
-    localStorage.removeItem("adminMasterLogged");
+    sessionStorage.removeItem("adminMasterLogged");
     await signOut(auth);
     onLogout();
   };
@@ -309,7 +313,7 @@ export default function AdminPanel({ onLogout }: { onLogout: () => void }) {
       await addDoc(membersRef, {
         name: name.trim(),
         ra: formattedRa,
-        cpf: cpf.trim() || "",
+        cpf: cpf ? cpf.replace(/\D/g, "") : "",
         rg: rg.trim() || "",
         birthdate,
         validityDate: validity,
@@ -342,6 +346,34 @@ export default function AdminPanel({ onLogout }: { onLogout: () => void }) {
         type: "error",
       });
       setTimeout(() => setStatus(null), 4000);
+    }
+  };
+
+  const handleRegisterVisitorAction = async () => {
+    if (!visitorName.trim() || !visitorCpf.trim()) {
+      setStatus({ msg: "Preencha Nome e CPF do visitante.", type: "error" });
+      setTimeout(() => setStatus(null), 4000);
+      return;
+    }
+    const cleanCPF = visitorCpf.replace(/\D/g, "");
+    if (cleanCPF.length !== 11) {
+      setStatus({ msg: "CPF deve conter 11 dígitos.", type: "error" });
+      setTimeout(() => setStatus(null), 4000);
+      return;
+    }
+
+    setStatus({ msg: "Cadastrando visitante...", type: "loading" });
+    try {
+      const visitor = await registerVisitor(visitorName.trim(), cleanCPF);
+      setStatus({ msg: `Visitante cadastrado com sucesso! Posição/Código: ${visitor.alphaCode}`, type: "success" });
+      setVisitorName("");
+      setVisitorCpf("");
+      // keep success string up for a while so they read the code
+      setTimeout(() => setStatus(null), 10000); 
+    } catch (e: any) {
+      console.error(e);
+      setStatus({ msg: e.message || "Erro ao cadastrar visitante.", type: "error" });
+      setTimeout(() => setStatus(null), 5000);
     }
   };
 
@@ -419,10 +451,23 @@ export default function AdminPanel({ onLogout }: { onLogout: () => void }) {
           <Calendar className="w-4 h-4" />
           Eventos e Presenças (BETA)
         </button>
+        <button
+          onClick={() => setActiveTab("events_trash")}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-t-xl font-bold text-sm transition-colors ${
+            activeTab === "events_trash"
+              ? "bg-sky-50 dark:bg-sky-500/10 text-sky-600 dark:text-sky-400 border-b-2 border-sky-600 dark:border-sky-400"
+              : "text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800/50"
+          }`}
+        >
+          <Trash2 className="w-4 h-4" />
+          Lixeira de Eventos
+        </button>
       </div>
 
       {activeTab === "events" ? (
         <EventManagement />
+      ) : activeTab === "events_trash" ? (
+        <EventsRecycleBin />
       ) : (
         <>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-8 no-print">
@@ -730,6 +775,51 @@ export default function AdminPanel({ onLogout }: { onLogout: () => void }) {
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
               )}
               Criar Registo Direto & Gerar QR Code
+            </button>
+          </div>
+
+          <div className="space-y-4 sm:space-y-5 bg-emerald-50 dark:bg-emerald-900/10 p-4 sm:p-6 rounded-2xl border border-emerald-200 dark:border-emerald-500/30 no-print mt-6">
+            <h3 className="text-base sm:text-lg font-medium text-slate-800 dark:text-slate-200 flex items-center gap-2">
+              <UserPlus className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+              Cadastro Rápido de Visitante
+            </h3>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
+              <div>
+                <label className="block text-[10px] sm:text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">
+                  Nome do Visitante *
+                </label>
+                <input
+                  type="text"
+                  value={visitorName}
+                  onChange={(e) => setVisitorName(e.target.value)}
+                  placeholder="Ex: Maria Souza"
+                  className="input-modern w-full rounded-xl py-2.5 px-3"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] sm:text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">
+                  CPF *
+                </label>
+                <input
+                  type="text"
+                  value={visitorCpf}
+                  onChange={(e) => setVisitorCpf(e.target.value)}
+                  placeholder="Apenas números ou formatado"
+                  className="input-modern w-full rounded-xl py-2.5 px-3"
+                />
+              </div>
+            </div>
+
+            <button
+              onClick={handleRegisterVisitorAction}
+              disabled={status?.type === "loading"}
+              className="btn-modern w-full flex items-center justify-center py-3.5 px-4 rounded-xl shadow-lg shadow-emerald-600/20 text-sm font-bold text-white bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-400 hover:to-green-500"
+            >
+              {status?.type === "loading" && (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              )}
+              Cadastrar Visitante
             </button>
           </div>
 

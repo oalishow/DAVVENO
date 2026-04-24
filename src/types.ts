@@ -14,6 +14,7 @@ export interface Member {
   diocese?: string;
   isActive?: boolean;
   isApproved?: boolean;
+  status?: "VALID" | "PENDING" | "REVOKED";
   createdAt?: string;
   deletedAt?: string | null;
   legacyId?: string;
@@ -44,6 +45,9 @@ export interface Event {
   status: string;
   imageUrl?: string;
   certificateTemplate?: CertificateTemplate;
+  registrationDeadline?: string;
+  isRegistrationPaused?: boolean;
+  deletedAt?: string;
 }
 
 export interface Attendance {
