@@ -1,30 +1,46 @@
-import { useState, useEffect, lazy, Suspense } from 'react';
-import Header from './components/Header';
-import Footer from './components/Footer';
-import { Moon, Sun, Shield, User, Lock, Loader2, Sparkles, RefreshCw, X } from 'lucide-react';
-import { loginAnon, testConnection } from './lib/firebase';
-import { motion, AnimatePresence } from 'motion/react';
-import ErrorBoundary from './components/ErrorBoundary';
-import DynamicPWA from './components/DynamicPWA';
-import NotificationObserver from './components/NotificationObserver';
-import { useSettings } from './context/SettingsContext';
-import { APP_VERSION, CHANGELOG } from './lib/constants';
+import { useState, useEffect, lazy, Suspense } from "react";
+import Header from "./components/Header";
+import Footer from "./components/Footer";
+import {
+  Moon,
+  Sun,
+  Shield,
+  User,
+  Lock,
+  Loader2,
+  Sparkles,
+  RefreshCw,
+  X,
+  Calendar,
+} from "lucide-react";
+import { loginAnon, testConnection } from "./lib/firebase";
+import { motion, AnimatePresence } from "motion/react";
+import ErrorBoundary from "./components/ErrorBoundary";
+import DynamicPWA from "./components/DynamicPWA";
+import NotificationObserver from "./components/NotificationObserver";
+import { useSettings } from "./context/SettingsContext";
+import { APP_VERSION, CHANGELOG } from "./lib/constants";
 
-const Verifier = lazy(() => import('./components/Verifier'));
-const Admin = lazy(() => import('./components/Admin'));
-const StudentPortal = lazy(() => import('./components/StudentPortal'));
+const Verifier = lazy(() => import("./components/Verifier"));
+const Admin = lazy(() => import("./components/Admin"));
+const StudentPortal = lazy(() => import("./components/StudentPortal"));
+const EventsPage = lazy(() => import("./components/EventsPage"));
 
 export default function App() {
   const { settings } = useSettings();
-  const [activeTab, setActiveTab] = useState<'verifier' | 'admin' | 'student'>('verifier');
+  const [activeTab, setActiveTab] = useState<
+    "verifier" | "admin" | "student" | "events"
+  >("verifier");
   const [targetVerifyCode, setTargetVerifyCode] = useState<string | null>(null);
-  const [adminForceViewCode, setAdminForceViewCode] = useState<string | null>(null);
+  const [adminForceViewCode, setAdminForceViewCode] = useState<string | null>(
+    null,
+  );
   const [showUpdateModal, setShowUpdateModal] = useState(false);
-  const [updateStatus, setUpdateStatus] = useState<'idle' | 'success'>('idle');
+  const [updateStatus, setUpdateStatus] = useState<"idle" | "success">("idle");
 
   useEffect(() => {
     // Monitorar atualizações do código-fonte, não do banco de dados para evitar piscar/sumir
-    const savedVersion = localStorage.getItem('last_seen_app_version');
+    const savedVersion = localStorage.getItem("last_seen_app_version");
     if (savedVersion !== APP_VERSION) {
       // Ocultar após o salvamento pra evitar mostrar novamente sem querer
       const t = setTimeout(() => {
@@ -36,31 +52,32 @@ export default function App() {
 
   const handleGlobalVerify = (code: string) => {
     setTargetVerifyCode(code);
-    setActiveTab('verifier');
+    setActiveTab("verifier");
   };
 
   const handleAdminForceView = (code: string) => {
     setAdminForceViewCode(code);
-    setActiveTab('student');
+    setActiveTab("student");
   };
 
   const handleUpdateClick = () => {
-    setUpdateStatus('success');
-    localStorage.setItem('last_seen_app_version', APP_VERSION);
-    
+    setUpdateStatus("success");
+    localStorage.setItem("last_seen_app_version", APP_VERSION);
+
     // Um pouco mais de tempo para lerem a mensagem de sucesso (2.5s)
     setTimeout(() => {
       // Remover paramátros de URL que causam resets indesejados
-      if (window.location.search.includes('v=')) {
-         window.location.href = window.location.origin + window.location.pathname;
+      if (window.location.search.includes("v=")) {
+        window.location.href =
+          window.location.origin + window.location.pathname;
       } else {
-         window.location.reload();
+        window.location.reload();
       }
     }, 2500);
   };
 
   const handleCloseUpdate = () => {
-    localStorage.setItem('last_seen_app_version', APP_VERSION);
+    localStorage.setItem("last_seen_app_version", APP_VERSION);
     setShowUpdateModal(false);
   };
 
@@ -72,25 +89,25 @@ export default function App() {
 
   useEffect(() => {
     // Determine initial theme
-    const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)');
-    
+    const systemPrefersDark = window.matchMedia("(prefers-color-scheme: dark)");
+
     const applyTheme = (isDark: boolean) => {
       if (isDark) {
-        document.documentElement.classList.add('dark');
+        document.documentElement.classList.add("dark");
       } else {
-        document.documentElement.classList.remove('dark');
+        document.documentElement.classList.remove("dark");
       }
     };
 
     const applyCurrentThemeSetting = () => {
-       const savedTheme = localStorage.getItem('theme');
-       if (savedTheme === 'dark') {
-          applyTheme(true);
-       } else if (savedTheme === 'light') {
-          applyTheme(false);
-       } else {
-          applyTheme(systemPrefersDark.matches);
-       }
+      const savedTheme = localStorage.getItem("theme");
+      if (savedTheme === "dark") {
+        applyTheme(true);
+      } else if (savedTheme === "light") {
+        applyTheme(false);
+      } else {
+        applyTheme(systemPrefersDark.matches);
+      }
     };
 
     // Initial load
@@ -98,45 +115,49 @@ export default function App() {
 
     // Listener for system changes
     const themeListener = () => {
-      if (!localStorage.getItem('theme')) {
+      if (!localStorage.getItem("theme")) {
         applyTheme(systemPrefersDark.matches);
       }
     };
 
-    systemPrefersDark.addEventListener('change', themeListener);
-    
+    systemPrefersDark.addEventListener("change", themeListener);
+
     // Custom event for immediate theme toggle without reload
     const onThemeChange = () => applyCurrentThemeSetting();
-    window.addEventListener('themeChange', onThemeChange);
+    window.addEventListener("themeChange", onThemeChange);
 
     // Liberações Iniciais (Firebase login anonimo necessário para acessar dados base)
     const initFirebase = async (retries = 3) => {
       const success = await loginAnon();
       if (!success && retries > 0) {
-        console.warn(`Firebase login failed. Retrying in 3s... (${retries} left)`);
+        console.warn(
+          `Firebase login failed. Retrying in 3s... (${retries} left)`,
+        );
         setTimeout(() => initFirebase(retries - 1), 3000);
         return;
       }
-      
+
       // Silently test connection to warm up the SDK
       const connected = await testConnection();
       (window as any).db_connected = connected;
-      
+
       if (!connected && retries > 0) {
-        console.warn(`Firestore server test failed. Retrying in 5s... (${retries} left)`);
+        console.warn(
+          `Firestore server test failed. Retrying in 5s... (${retries} left)`,
+        );
         setTimeout(() => initFirebase(retries - 1), 5000);
       }
     };
     initFirebase();
 
     // Update check
-    const storedVersion = localStorage.getItem('app_version');
+    const storedVersion = localStorage.getItem("app_version");
     if (storedVersion && storedVersion !== APP_VERSION) {
       setShowUpdateModal(true);
     }
-    localStorage.setItem('app_version', APP_VERSION);
+    localStorage.setItem("app_version", APP_VERSION);
 
-    return () => systemPrefersDark.removeEventListener('change', themeListener);
+    return () => systemPrefersDark.removeEventListener("change", themeListener);
   }, []);
 
   return (
@@ -150,7 +171,7 @@ export default function App() {
 
         <AnimatePresence>
           {showUpdateModal && (
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -158,24 +179,35 @@ export default function App() {
             >
               <div className="bg-white dark:bg-slate-900 w-full max-w-sm rounded-3xl shadow-2xl p-5 border border-sky-100 dark:border-sky-500/20 text-center relative max-h-[85vh] overflow-y-auto">
                 <div className="absolute top-0 right-0 p-3">
-                  <button onClick={handleCloseUpdate} className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors">
+                  <button
+                    onClick={handleCloseUpdate}
+                    className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors"
+                  >
                     <X className="w-4 h-4 text-slate-400" />
                   </button>
                 </div>
-                
+
                 <div className="w-12 h-12 bg-sky-100 dark:bg-sky-500/20 text-sky-600 rounded-2xl flex items-center justify-center mx-auto mb-3 animate-pulse">
                   <Sparkles className="w-6 h-6" />
                 </div>
-                
+
                 <h2 className="text-lg font-bold text-slate-800 dark:text-white mb-1">
-                  {updateStatus === 'success' ? 'Perfeito!' : 'Novidades Chegaram!'}
+                  {updateStatus === "success"
+                    ? "Perfeito!"
+                    : "Novidades Chegaram!"}
                 </h2>
-                <p className="text-[10px] text-slate-500 dark:text-slate-400 mb-4 uppercase tracking-widest font-black">Versão {APP_VERSION}</p>
-                
-                {updateStatus === 'success' ? (
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 mb-4 uppercase tracking-widest font-black">
+                  Versão {APP_VERSION}
+                </p>
+
+                {updateStatus === "success" ? (
                   <div className="py-6 animate-bounce">
-                    <p className="text-sky-600 dark:text-sky-400 font-bold text-sm">Atualizações aplicadas com sucesso!</p>
-                    <p className="text-[10px] text-slate-400 mt-2">Reiniciando o sistema...</p>
+                    <p className="text-sky-600 dark:text-sky-400 font-bold text-sm">
+                      Atualizações aplicadas com sucesso!
+                    </p>
+                    <p className="text-[10px] text-slate-400 mt-2">
+                      Reiniciando o sistema...
+                    </p>
                   </div>
                 ) : (
                   <>
@@ -183,12 +215,14 @@ export default function App() {
                       {CHANGELOG.map((item, i) => (
                         <div key={i} className="flex gap-2 items-start group">
                           <div className="w-1 h-1 rounded-full bg-sky-500 mt-1.5 shrink-0 group-hover:scale-150 transition-transform" />
-                          <span className="text-[10px] leading-tight text-slate-600 dark:text-slate-300 font-medium">{item}</span>
+                          <span className="text-[10px] leading-tight text-slate-600 dark:text-slate-300 font-medium">
+                            {item}
+                          </span>
                         </div>
                       ))}
                     </div>
 
-                    <button 
+                    <button
                       onClick={handleUpdateClick}
                       className="w-full py-2.5 bg-sky-600 text-white rounded-xl text-xs sm:text-sm font-bold shadow-lg shadow-sky-500/30 flex items-center justify-center gap-2 hover:bg-sky-500 transition-all active:scale-95"
                     >
@@ -197,8 +231,10 @@ export default function App() {
                     </button>
                   </>
                 )}
-                
-                <p className="text-[9px] text-slate-400 mt-4 font-bold uppercase tracking-tighter">O sistema foi modificado para melhor atendê-lo.</p>
+
+                <p className="text-[9px] text-slate-400 mt-4 font-bold uppercase tracking-tighter">
+                  O sistema foi modificado para melhor atendê-lo.
+                </p>
               </div>
             </motion.div>
           )}
@@ -207,24 +243,31 @@ export default function App() {
         <div className="relative z-10 space-y-6 sm:space-y-8 print:space-y-4">
           <Header />
 
-          <div className="grid grid-cols-3 bg-slate-200/50 dark:bg-slate-900/60 rounded-xl p-1 shadow-inner border border-slate-200/50 dark:border-slate-700/50 no-print print:hidden gap-1">
-            <button 
-              onClick={() => setActiveTab('student')}
-              className={`flex flex-col items-center justify-center py-2 text-[10px] font-black uppercase tracking-tighter rounded-lg transition-all duration-300 ${activeTab === 'student' ? 'bg-white dark:bg-sky-600 text-sky-600 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
+          <div className="grid grid-cols-4 bg-slate-200/50 dark:bg-slate-900/60 rounded-xl p-1 shadow-inner border border-slate-200/50 dark:border-slate-700/50 no-print print:hidden gap-1">
+            <button
+              onClick={() => setActiveTab("student")}
+              className={`flex flex-col items-center justify-center py-2 text-[10px] font-black uppercase tracking-tighter rounded-lg transition-all duration-300 ${activeTab === "student" ? "bg-white dark:bg-sky-600 text-sky-600 dark:text-white shadow-sm" : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"}`}
             >
               <User className="w-4 h-4 mb-0.5" />
               Minha ID
             </button>
-            <button 
-              onClick={() => setActiveTab('verifier')}
-              className={`flex flex-col items-center justify-center py-2 text-[10px] font-black uppercase tracking-tighter rounded-lg transition-all duration-300 ${activeTab === 'verifier' ? 'bg-white dark:bg-sky-600 text-sky-600 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
+            <button
+              onClick={() => setActiveTab("verifier")}
+              className={`flex flex-col items-center justify-center py-2 text-[10px] font-black uppercase tracking-tighter rounded-lg transition-all duration-300 ${activeTab === "verifier" ? "bg-white dark:bg-sky-600 text-sky-600 dark:text-white shadow-sm" : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"}`}
             >
               <Shield className="w-4 h-4 mb-0.5" />
               Verificar
             </button>
-            <button 
-              onClick={() => setActiveTab('admin')}
-              className={`flex flex-col items-center justify-center py-2 text-[10px] font-black uppercase tracking-tighter rounded-lg transition-all duration-300 ${activeTab === 'admin' ? 'bg-white dark:bg-sky-600 text-sky-600 dark:text-white shadow-sm' : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}`}
+            <button
+              onClick={() => setActiveTab("events")}
+              className={`flex flex-col items-center justify-center py-2 text-[10px] font-black uppercase tracking-tighter rounded-lg transition-all duration-300 ${activeTab === "events" ? "bg-white dark:bg-sky-600 text-sky-600 dark:text-white shadow-sm" : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"}`}
+            >
+              <Calendar className="w-4 h-4 mb-0.5" />
+              Eventos
+            </button>
+            <button
+              onClick={() => setActiveTab("admin")}
+              className={`flex flex-col items-center justify-center py-2 text-[10px] font-black uppercase tracking-tighter rounded-lg transition-all duration-300 ${activeTab === "admin" ? "bg-white dark:bg-sky-600 text-sky-600 dark:text-white shadow-sm" : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200"}`}
             >
               <Lock className="w-4 h-4 mb-0.5" />
               Gestão
@@ -234,31 +277,54 @@ export default function App() {
           <AnimatePresence mode="wait">
             <motion.div
               key={activeTab}
-              initial={{ opacity: 0, x: activeTab === 'student' ? -20 : activeTab === 'admin' ? 20 : 0 }}
+              initial={{
+                opacity: 0,
+                x:
+                  activeTab === "student"
+                    ? -20
+                    : activeTab === "admin"
+                      ? 20
+                      : 0,
+              }}
               animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: activeTab === 'student' ? 20 : activeTab === 'admin' ? -20 : 0 }}
+              exit={{
+                opacity: 0,
+                x:
+                  activeTab === "student"
+                    ? 20
+                    : activeTab === "admin"
+                      ? -20
+                      : 0,
+              }}
               transition={{ duration: 0.2 }}
             >
               <ErrorBoundary>
-                <Suspense fallback={<div className="flex justify-center p-10"><Loader2 className="animate-spin text-sky-500 w-8 h-8" /></div>}>
-                  {activeTab === 'verifier' && (
-                    <Verifier 
-                      externalCode={targetVerifyCode} 
-                      onExternalVerified={() => setTargetVerifyCode(null)} 
+                <Suspense
+                  fallback={
+                    <div className="flex justify-center p-10">
+                      <Loader2 className="animate-spin text-sky-500 w-8 h-8" />
+                    </div>
+                  }
+                >
+                  {activeTab === "verifier" && (
+                    <Verifier
+                      externalCode={targetVerifyCode}
+                      onExternalVerified={() => setTargetVerifyCode(null)}
                     />
                   )}
-                  {activeTab === 'admin' && <Admin />}
-                  {activeTab === 'student' && (
-                    <StudentPortal 
-                      overrideCode={adminForceViewCode} 
-                      onOverrideConsumed={() => setAdminForceViewCode(null)} 
+                  {activeTab === "admin" && <Admin />}
+                  {activeTab === "events" && <EventsPage />}
+                  {activeTab === "student" && (
+                    <StudentPortal
+                      overrideCode={adminForceViewCode}
+                      onOverrideConsumed={() => setAdminForceViewCode(null)}
                     />
                   )}
                 </Suspense>
               </ErrorBoundary>
             </motion.div>
           </AnimatePresence>
-          
+
           <Footer />
         </div>
       </div>

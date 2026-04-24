@@ -8,9 +8,11 @@ interface ImageCropperModalProps {
   imageSrc: string;
   onClose: () => void;
   onCropComplete: (base64: string) => void;
+  aspect?: number;
+  cropShape?: "rect" | "round";
 }
 
-export default function ImageCropperModal({ imageSrc, onClose, onCropComplete }: ImageCropperModalProps) {
+export default function ImageCropperModal({ imageSrc, onClose, onCropComplete, aspect = 1, cropShape = "round" }: ImageCropperModalProps) {
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
@@ -41,11 +43,11 @@ export default function ImageCropperModal({ imageSrc, onClose, onCropComplete }:
           image={imageSrc}
           crop={crop}
           zoom={zoom}
-          aspect={1}
+          aspect={aspect}
           onCropChange={setCrop}
           onCropComplete={onCropCompleteEvent}
           onZoomChange={setZoom}
-          cropShape="round"
+          cropShape={cropShape}
           showGrid={false}
         />
       </div>

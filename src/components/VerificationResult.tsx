@@ -8,7 +8,7 @@ import Modal from './Modal';
 
 interface VerificationResultProps {
   member: Member | null;
-  status: 'VALID' | 'INACTIVE' | 'EXPIRED' | 'NOT_FOUND';
+  status: 'VALID' | 'INACTIVE' | 'EXPIRED' | 'NOT_FOUND' | 'NOT_ENROLLED' | 'ALREADY_PRESENT';
   onReset: () => void;
   isMyID?: boolean;
 }
@@ -49,6 +49,22 @@ export default function VerificationResult({ member, status, onReset, isMyID = f
       descHtml = 'A validade deste documento terminou na data referida. Por favor, regularize a sua situação institucional.';
       dotColor = 'bg-rose-500';
       badgeText = 'Expirado';
+      break;
+    case 'NOT_ENROLLED':
+      themeClass = 'rose';
+      titleText = 'Não Inscrito no Evento';
+      subtitleText = 'Acesso ao Evento Negado';
+      descHtml = 'Este aluno não realizou a inscrição para o evento selecionado.';
+      dotColor = 'bg-rose-500';
+      badgeText = 'Não Inscrito';
+      break;
+    case 'ALREADY_PRESENT':
+      themeClass = 'amber';
+      titleText = 'Check-in Já Realizado';
+      subtitleText = 'Aviso de Duplicidade';
+      descHtml = 'Este aluno já registrou presença neste evento anteriormente.';
+      dotColor = 'bg-amber-500';
+      badgeText = 'Já Presente';
       break;
     default:
       themeClass = 'rose';

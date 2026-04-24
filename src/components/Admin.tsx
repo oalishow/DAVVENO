@@ -1,14 +1,15 @@
-import { useState, useEffect } from 'react';
-import AdminLogin from './AdminLogin';
-import AdminPanel from './AdminPanel';
-import { auth } from '../lib/firebase';
-import { onAuthStateChanged } from 'firebase/auth';
+import { useState, useEffect } from "react";
+import AdminLogin from "./AdminLogin";
+import AdminPanel from "./AdminPanel";
+import { auth } from "../lib/firebase";
+import { onAuthStateChanged } from "firebase/auth";
 
 export default function Admin() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
   useEffect(() => {
-    const isMasterLogged = localStorage.getItem('adminMasterLogged') === 'true';
+    const isMasterLogged =
+      sessionStorage.getItem("adminMasterLogged") === "true";
     if (isMasterLogged) {
       setIsAuthenticated(true);
       // Wait for auth to settle but don't force logout
