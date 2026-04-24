@@ -404,8 +404,8 @@ export default function StudentPortal({ overrideCode, onOverrideConsumed }: Stud
           Deseja desvincular sua carteirinha deste dispositivo? Esta ação encerrará sua sessão segura.
         </Modal>
 
-        <div className="w-full flex flex-col items-center animate-fade-in no-print mt-10 max-w-sm sm:max-w-[600px] mx-auto">
-           <div className="w-full flex justify-between items-center mb-6 px-2">
+        <div className="w-full flex flex-col items-center animate-fade-in mt-10 max-w-sm sm:max-w-[600px] mx-auto">
+           <div className="w-full flex justify-between items-center mb-6 px-2 no-print print:hidden">
               <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest flex items-center gap-1">
                  <ShieldCheck className="w-3 h-3" /> Acesso Seguro Ativo
               </span>
@@ -442,7 +442,7 @@ export default function StudentPortal({ overrideCode, onOverrideConsumed }: Stud
              isMyID={true}
            />
 
-           <div className="mt-8 w-full px-4 py-6 bg-slate-50 dark:bg-slate-800/50 rounded-3xl border border-slate-200 dark:border-slate-700/50 text-center">
+           <div className="mt-8 w-full px-4 py-6 bg-slate-50 dark:bg-slate-800/50 rounded-3xl border border-slate-200 dark:border-slate-700/50 text-center no-print print:hidden">
               <h3 className="text-sm font-black text-slate-800 dark:text-white uppercase tracking-widest mb-3 leading-tight">Validade Nacional</h3>
               <p className="text-[10px] text-slate-500 mb-4 px-4 leading-relaxed font-medium">O DAVVERO-ID é seu documento institucional. Para eventos nacionais que exijam o padrão ITI com certificação ICP-Brasil, você pode solicitar o DNE oficial.</p>
               <button 

@@ -207,7 +207,7 @@ body {
   }
 
   /* Specific Wrapper constraints */
-  .w-full.flex.flex-col.items-center {
+  .w-full.flex.flex-col.items-center:not(.no-print):not(.print\:hidden) {
     display: block !important;
     text-align: center !important;
   }
