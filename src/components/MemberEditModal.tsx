@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, ChangeEvent } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Save, Trash2, ShieldAlert, Download, QrCode, Image as ImageIcon, Printer } from 'lucide-react';
 import { doc, updateDoc } from 'firebase/firestore';
-import { db, appId } from '../lib/firebase';
+import { db, appId, createNotification } from '../lib/firebase';
 import FajopaIDCard from './FajopaIDCard';
 import { useSettings } from '../context/SettingsContext';
 import type { Member } from '../types';
@@ -119,6 +119,15 @@ export default function MemberEditModal({ member, onClose, onUpdate }: MemberEdi
         legacyQrCode,
         photoUrl: photoUrl || null
       });
+
+      // Notificar o membro sobre a alteração
+      await createNotification({
+        recipientId: member.id,
+        title: "Perfil Atualizado",
+        message: "Sua ficha cadastral foi atualizada pela administração.",
+        type: "edicao"
+      }).catch(console.error);
+
       onUpdate();
     } catch (err) {
       console.error(err);

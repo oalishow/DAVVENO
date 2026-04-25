@@ -190,8 +190,20 @@ export default function Header() {
                           key={n.id}
                           onClick={() => {
                             if (!n.read) markNotificationAsRead(n.id);
-                            // Se tiver um location para abrir a view devida:
-                            if (n.type === 'edicao') window.location.hash = "admin";
+                            
+                            // Navegação via triggerTab global
+                            const trigger = (window as any).triggerTab;
+                            if (trigger) {
+                              if (n.type === 'evento') trigger('events');
+                              else if (n.type === 'carteirinha') trigger('student');
+                              else if (n.type === 'edicao') {
+                                if (isMasterLogged) trigger('admin');
+                                else trigger('student');
+                              }
+                              else if (n.type === 'certificado') trigger('student');
+                              else if (n.type === 'inscricao') trigger('admin');
+                            }
+                            setShowDropdown(false);
                           }}
                           className={`w-full text-left p-2.5 rounded-xl transition-colors flex items-start gap-2.5 ${n.read ? 'opacity-60 hover:bg-slate-50 dark:hover:bg-slate-800' : 'bg-sky-50 dark:bg-sky-900/10 hover:bg-sky-100 dark:hover:bg-sky-900/20'}`}
                         >

@@ -28,7 +28,7 @@ import {
   where,
   Timestamp,
 } from "firebase/firestore";
-import { db, appId, auth, registerVisitor } from "../lib/firebase";
+import { db, appId, auth, registerVisitor, createNotification } from "../lib/firebase";
 import { signOut } from "firebase/auth";
 import type { Member } from "../types";
 import { useSettings } from "../context/SettingsContext";
@@ -310,7 +310,7 @@ export default function AdminPanel({ onLogout }: { onLogout: () => void }) {
         )
         .join("");
 
-      await addDoc(membersRef, {
+      const docRef = await addDoc(membersRef, {
         name: name.trim(),
         ra: formattedRa,
         cpf: cpf ? cpf.replace(/\D/g, "") : "",
@@ -326,6 +326,16 @@ export default function AdminPanel({ onLogout }: { onLogout: () => void }) {
         isApproved: true,
         createdAt: new Date().toISOString(),
       });
+
+      const memberId = docRef.id;
+
+      // Notificar o novo membro (embora ele precise logar para ver, a notificação estará lá)
+      await createNotification({
+        recipientId: memberId,
+        title: "Bem-vindo ao DAVVERO-ID",
+        message: `Sua identidade estudantil foi criada. Seu código é: ${alphaCode}`,
+        type: "carteirinha"
+      }).catch(console.error);
 
       setStatus({ msg: "Identidade criada com sucesso!", type: "success" });
       setName("");

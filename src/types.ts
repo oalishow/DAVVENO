@@ -78,7 +78,7 @@ export interface Notification {
   recipientId: string; // The specific memberId or "admin"
   title: string;
   message: string;
-  type: "carteirinha" | "inscricao" | "certificado" | "edicao" | "visitante" | "backup" | "sistema";
+  type: "carteirinha" | "inscricao" | "certificado" | "edicao" | "visitante" | "backup" | "sistema" | "evento";
   read: boolean;
   createdAt: string;
   actionUrl?: string;

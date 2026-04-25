@@ -32,6 +32,7 @@ import {
   updateEvent,
   closeEvent,
   deleteEvent,
+  createNotification,
 } from "../lib/firebase";
 import type { Event, Attendance } from "../types";
 import EventAttendeesModal from "./EventAttendeesModal";
@@ -201,7 +202,16 @@ export default function EventManagement() {
           type: "success",
         });
       } else {
-        await createEvent({ ...payload, status: "aberto" });
+        const newEventId = await createEvent({ ...payload, status: "aberto" });
+        
+        // Notify all users about the new event
+        await createNotification({
+          recipientId: "todos",
+          title: "Novo Evento Disponível",
+          message: `Um novo evento foi criado: ${title}. Confira as inscrições!`,
+          type: "evento"
+        }).catch(console.error);
+
         setStatusMsg({ msg: "Evento criado com sucesso!", type: "success" });
       }
 

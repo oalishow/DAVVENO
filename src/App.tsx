@@ -85,6 +85,7 @@ export default function App() {
     // Expose global trigger for deep components
     (window as any).triggerVerification = handleGlobalVerify;
     (window as any).triggerAdminForceView = handleAdminForceView;
+    (window as any).triggerTab = (tab: any) => setActiveTab(tab);
   }, []);
 
   useEffect(() => {

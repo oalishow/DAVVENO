@@ -28,7 +28,7 @@ export function useNotifications(recipientId: string | null) {
 
     const q = query(
       collection(db, `artifacts/${appId}/public/data/notifications`),
-      where("recipientId", "==", recipientId)
+      where("recipientId", "in", [recipientId, "todos"])
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
